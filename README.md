@@ -1,3 +1,3 @@
 # eWave
 
-# Repositorio para codigo relacionado a projecto eWave, asistencia segundo semestre 2024
+# Repositorio para código relacionado a proyecto eWave, asistencia segundo semestre 2024
