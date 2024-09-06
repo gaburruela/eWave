@@ -1,3 +1,4 @@
+New variable;
 Testing which version is being staged.
 
 Second change using brach. For attempting pull requests.
