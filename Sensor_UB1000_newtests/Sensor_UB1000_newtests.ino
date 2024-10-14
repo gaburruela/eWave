@@ -20,7 +20,7 @@ void loop() {
     voltage = analogRead(sensor);
     distance_avg = distance_avg + voltage / 1024 * 930 + 70; // Mapeo manual para tener decimales (regla de 3)
     // distance_avg = map(voltage,0,1024,30,500); // Mapeo automático de Arduino
-    delay(50);
+    //delay(50);
   }
 
   distance_avg = distance_avg / num_med; // Saca el promedio
