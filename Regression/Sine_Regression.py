@@ -14,14 +14,14 @@ def function(x, amp, freq, phase, offset):
 
 # DATA READING AND PREPROCESSING
 # Read the actual data from csv file
-data = pandas.read_excel('Double_data.xlsx','30 - 1 sensor')
+data = pandas.read_excel('Datos_Reales_1.xlsx','UBDual20')
 x_full = np.array(data['Tiempo (ms)'].tolist())
-y_full1 = np.array(data['Altura 1 (mm)'].tolist())
-y_full2 = np.array(data['Altura 2 (mm)'].tolist())
+y_full1 = np.array(data['Distancia 1 (mm)'].tolist())
+y_full2 = np.array(data['Distancia 2 (mm)'].tolist())
 
 # Use only some of the data in case of errors
 max_data = 400 # Total data points to use (minus bad_data)
-bad_data = np.where(x_full==60)[0][0] # First data points to ignore - Automatic
+bad_data = np.where(x_full==50)[0][0] # First data points to ignore - Automatic
 
 x_data = x_full[bad_data:max_data-bad_data]
 y_data1 = y_full1[bad_data:max_data-bad_data]
@@ -34,16 +34,16 @@ y_data2 = y_full2[bad_data:max_data-bad_data]
 # Frequency is the one messing everything up - has to be within 0.0002 of real value
 # Use excel as a lookup table to approximate
 
-amp1 = 30 # [mm]
-freq1 = 0.0045 # [krad/s]
+amp1 = 15 # [mm]
+freq1 = 0.0031 # [krad/s]
 phase1 = 0 # [rad]
-offset1 = 390 # [mm]
+offset1 = 510 # [mm]
 initial1 = (amp1, freq1, phase1, offset1) # For the actual data
 
-amp2 = 30 # [mm]
-freq2 = 0.0045 # [krad/s]
+amp2 = 15 # [mm]
+freq2 = 0.003 # [krad/s]
 phase2 = 0 # [rad]
-offset2 = 390 # [mm]
+offset2 = 550 # [mm]
 initial2 = (amp2, freq2, phase2, offset2) # For the actual data
 
 
@@ -67,6 +67,10 @@ if popt1[0] < 0:
     amp1 = amp1 * -1
     phase1 = phase1 + np.pi
 
+# Get phase between 0 and 2pi
+if phase1 > 2*np.pi or phase1 < 0:
+    phase1 = phase1 - phase1//(2*np.pi) * 2*np.pi
+
 y_pred1 = amp1*np.sin(freq1*x_data + phase1) + offset1
 
 amp2 = popt2[0]
@@ -77,6 +81,9 @@ offset2 = popt2[3]
 if popt2[0] < 0:
     amp2 = amp2 * -1
     phase2 = phase2 + np.pi
+
+if phase2 > 2*np.pi or phase2 < 0:
+    phase2 = phase2 - phase2//(2*np.pi) * 2*np.pi
 
 y_pred2 = amp2*np.sin(freq2*x_data + phase2) + offset2
 
@@ -96,14 +103,20 @@ plt.show()
 
 # ACTUAL RESULTS
 # Get averages
-amp = (amp1 + amp1)/2
+amp = (amp1 + amp2)/2
 freq = (freq1 + freq2)/2 * 1000/(2*np.pi) # in Hz
 
 # Get wavelength
-distance_sensors = 100 # [mm]
-time = abs(phase2 - phase1)/(freq*2*np.pi) # [s]
-vel = distance_sensors/time # [mm/s]
-wavelength = vel/freq # [mm]
+distance_sensors = 2220 # [mm]
+phase_diff = abs(phase2 - phase1) # [rad]
+
+crests = 1 # Number of crests between sensors
+
+# Correct for multiple wavelengths
+for i in range(crests - 1):
+    phase_diff += 2*np.pi
+
+wavelength = distance_sensors * 2*np.pi/phase_diff # [mm]
 
 # Display results
 print("Amplitude:", amp, "mm")
