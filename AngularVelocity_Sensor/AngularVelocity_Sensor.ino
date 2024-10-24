@@ -16,13 +16,13 @@ float angularVelocity = 0;
 
 
 void setup() {
-  pinMode(sensorPin, INPUT_PULLUP); // Sensor pin as input with pull-up resistor
+  pinMode(sensorPin, INPUT); // Sensor pin as input with pull-up resistor
   Serial.begin(9600); // Start serial communication
 }
 
 void loop() {
   // Check the sensor pin
-  if (digitalRead(sensorPin) == LOW) { // LOW for infrared, HIGH for inductive
+  if (digitalRead(sensorPin) == HIGH) { // LOW for infrared, HIGH for inductive
     currentPulseTime = millis(); // Store current time
 
     // If this is the first pulse detected, initialize the lastPulseTime

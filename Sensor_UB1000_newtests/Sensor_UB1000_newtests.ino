@@ -1,7 +1,7 @@
 // Se toman n mediciones y se saca el promedio de todas esas, dura como 3 segundos cada promedio
 
 const int sensor1 = A4;
-const int sensor2 = A0;  (Bond)
+const int sensor2 = A0;  // (Bond)
 const int num_med = 69; //nice
 
 float s1_voltage;
@@ -39,8 +39,8 @@ void loop() {
     s2_voltage = analogRead(sensor2);
     // Serial.print("voltaje sensor 1: ");
     // Serial.print(s1_voltage);
-    Serial.print(" voltaje sensor 2: ");
-    Serial.println(s2_voltage);
+    // Serial.print(" voltaje sensor 2: ");
+    // Serial.println(s2_voltage);
     // s1_distance_avg = s1_distance_avg + (s1_voltage - s1_min_Volt) / (s1_max_Volt - s1_min_Volt) * (s1_max_Dist - s1_min_Dist) + s1_min_Dist; // Mapeo manual sensor 1 para tener decimales (regla de 3)
     s2_distance_avg = s2_distance_avg + (s2_voltage - s2_min_Volt) / (s2_max_Volt - s2_min_Volt) * (s2_max_Dist - s2_min_Dist) + s2_min_Dist; // Mapeo manual sensor 2 para tener decimales (regla de 3)
     // s1_distance_avg = map(s1_voltage,0,1024,30,500); // Mapeo automático de Arduino
