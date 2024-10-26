@@ -26,7 +26,7 @@ time.sleep(2)
 with open(csv_filename, mode='w', newline='') as file:
     writer = csv.writer(file)
     # Escribe los encabezados del archivo CSV
-    writer.writerow(["Tiempo (ms)", "Distancia 1 (mm)", "Distancia 2 (mm)"])
+    writer.writerow(["Tiempo (s)", "Distancia 1 (mm)", "Distancia 2 (mm)"])
 
     try:
         while i < 400:
