@@ -15,7 +15,7 @@ def function(x, amp, freq, phase, offset):
 # DATA READING AND PREPROCESSING
 # Read the actual data from csv file
 data = pandas.read_excel('Datos_Reales_1.xlsx','UBDual20')
-x_full = np.array(data['Tiempo (ms)'].tolist())
+x_full = np.array(data['Tiempo (s)'].tolist())
 y_full1 = np.array(data['Distancia 1 (mm)'].tolist())
 y_full2 = np.array(data['Distancia 2 (mm)'].tolist())
 
@@ -35,15 +35,15 @@ y_data2 = y_full2[bad_data:max_data-bad_data]
 # Use excel as a lookup table to approximate
 
 amp1 = 15 # [mm]
-freq1 = 0.0031 # [krad/s]
+freq1 = 3 # [rad/s]
 phase1 = 0 # [rad]
-offset1 = 510 # [mm]
+offset1 = 0 # [mm]
 initial1 = (amp1, freq1, phase1, offset1) # For the actual data
 
 amp2 = 15 # [mm]
-freq2 = 0.003 # [krad/s]
+freq2 = 3 # [krad/s]
 phase2 = 0 # [rad]
-offset2 = 550 # [mm]
+offset2 = 0 # [mm]
 initial2 = (amp2, freq2, phase2, offset2) # For the actual data
 
 
@@ -104,7 +104,7 @@ plt.show()
 # ACTUAL RESULTS
 # Get averages
 amp = (amp1 + amp2)/2
-freq = (freq1 + freq2)/2 * 1000/(2*np.pi) # in Hz
+freq = (freq1 + freq2) / (4 * np.pi) # in Hz
 
 # Get wavelength
 distance_sensors = 2220 # [mm]
@@ -112,7 +112,7 @@ phase_diff = abs(phase2 - phase1) # [rad]
 
 crests = 1 # Number of crests between sensors
 
-# Correct for multiple wavelengths
+# Correct for multiple wavelengths - Check on the actual wave or guess ranges?
 for i in range(crests - 1):
     phase_diff += 2*np.pi
 

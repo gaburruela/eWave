@@ -6,14 +6,12 @@ const int med_zero = 100; // Mediciones para hacer el zero level
 // First sensor variables
 const int sensor1 = A0;
 float voltage1;
-float distance1;
 float distance_avg1 = 0;
 float zero_lvl1 = 0;
 
 // Second sensor variables
 const int sensor2 = A4;
 float voltage2;
-float distance2;
 float distance_avg2 = 0;
 float zero_lvl2 = 0;
 
