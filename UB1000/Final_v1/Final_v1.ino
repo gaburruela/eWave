@@ -1,5 +1,5 @@
 // Código unificado para UB1000
-// Includes: Dual measurements, calibration, zero-leveling, data to csv
+// Includes: Dual measurements, calibration, zero-leveling, data to csv, uniform time intervals
 
 // General variables
 const int num_med = 1; // average
@@ -87,8 +87,8 @@ void loop() {
     for (int i = 0; i < num_med; i++) {
       s1_voltage = analogRead(s1);
       s2_voltage = analogRead(s2);
-      s1_zero_lvl = s1_zero_lvl + mapping(s1_voltage, s1_min_Volt, s1_max_Volt, s1_min_Dist, s1_max_Dist);
-      s2_zero_lvl = s2_zero_lvl + mapping(s2_voltage, s2_min_Volt, s2_max_Volt, s2_min_Dist, s2_max_Dist);
+      s1_distance_avg = s1_distance_avg + mapping(s1_voltage, s1_min_Volt, s1_max_Volt, s1_min_Dist, s1_max_Dist);
+      s2_distance_avg = s2_distance_avg + mapping(s2_voltage, s2_min_Volt, s2_max_Volt, s2_min_Dist, s2_max_Dist);
 
       // Only for averages
       if (num_med > 1) {
@@ -105,8 +105,8 @@ void loop() {
     s2_distance_calibrated = s2_distance_avg * s2_slope + s2_intercept;
 
 
-    // Print results
-    Serial.print(millis_current * 1000); // Time in seconds
+    // Print results to csv
+    Serial.print(float(millis_current) / 1000); // Time in seconds
     Serial.print(",");
     Serial.print(s1_distance_calibrated - s1_zero_lvl);
     Serial.print(",");

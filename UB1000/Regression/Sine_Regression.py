@@ -14,14 +14,14 @@ def function(x, amp, freq, phase, offset):
 
 # DATA READING AND PREPROCESSING
 # Read the actual data from csv file
-data = pandas.read_excel('Datos_Reales_1.xlsx','UBDual20')
+data = pandas.read_csv('t1_25.csv')
 x_full = np.array(data['Tiempo (s)'].tolist())
 y_full1 = np.array(data['Distancia 1 (mm)'].tolist())
 y_full2 = np.array(data['Distancia 2 (mm)'].tolist())
 
 # Use only some of the data in case of errors
-max_data = 400 # Total data points to use (minus bad_data)
-bad_data = np.where(x_full==50)[0][0] # First data points to ignore - Automatic
+max_data = 200 # Total data points to use (minus bad_data)
+bad_data = np.where(x_full==5.04)[0][0] # First data points to ignore - Automatic
 
 x_data = x_full[bad_data:max_data-bad_data]
 y_data1 = y_full1[bad_data:max_data-bad_data]
@@ -34,14 +34,14 @@ y_data2 = y_full2[bad_data:max_data-bad_data]
 # Frequency is the one messing everything up - has to be within 0.0002 of real value
 # Use excel as a lookup table to approximate
 
-amp1 = 15 # [mm]
-freq1 = 3 # [rad/s]
+amp1 = 25 # [mm]
+freq1 = 3.9 # [rad/s]
 phase1 = 0 # [rad]
-offset1 = 0 # [mm]
+offset1 = -10 # [mm]
 initial1 = (amp1, freq1, phase1, offset1) # For the actual data
 
-amp2 = 15 # [mm]
-freq2 = 3 # [krad/s]
+amp2 = 25 # [mm]
+freq2 = 3.9 # [krad/s]
 phase2 = 0 # [rad]
 offset2 = 0 # [mm]
 initial2 = (amp2, freq2, phase2, offset2) # For the actual data
