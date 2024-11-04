@@ -27,23 +27,23 @@ float s2_zero_lvl = 0;
 
 // Manual mapping
 // Not Bond
-const float s1_min_Volt = 162; // [bits]
-const float s1_max_Volt = 813; // [bits]
+const float s1_min_Volt = 176; // [bits]
+const float s1_max_Volt = 887; // [bits]
 const float s1_min_Dist = 89; // [mm]
-const float s1_max_Dist = 976; // [mm]
+const float s1_max_Dist = 983; // [mm]
 // Bond
-const float s2_min_Volt = 158;
-const float s2_max_Volt = 794;
-const float s2_min_Dist = 85;
-const float s2_max_Dist = 967;
+const float s2_min_Volt = 176;
+const float s2_max_Volt = 884;
+const float s2_min_Dist = 89;
+const float s2_max_Dist = 990;
 
 // Parámetros de calibración - Revisar Excel
 // Not Bond
-const float s1_slope = 1.016270686;
-const float s1_intercept = -19.43567117;
+const float s1_slope = 0.998825735;
+const float s1_intercept = 2.344994118;
 // Bond
-const float s2_slope = 1;
-const float s2_intercept = 0;
+const float s2_slope = 1.020507353;
+const float s2_intercept = -2.293051471;
 
 
 // Manual mapping - get decimals
