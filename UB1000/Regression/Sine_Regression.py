@@ -14,7 +14,7 @@ def function(x, amp, freq, phase, offset):
 
 # DATA READING AND PREPROCESSING
 # Read the actual data from csv file
-data = pandas.read_csv('t1_25.csv')
+data = pandas.read_csv('DaGdAg_35.csv')
 x_full = np.array(data['Tiempo (s)'].tolist())
 y_full1 = np.array(data['Distancia 1 (mm)'].tolist())
 y_full2 = np.array(data['Distancia 2 (mm)'].tolist())
@@ -35,13 +35,13 @@ y_data2 = y_full2[bad_data:max_data-bad_data]
 # Use excel as a lookup table to approximate
 
 amp1 = 25 # [mm]
-freq1 = 3.9 # [rad/s]
+freq1 = 6.28 # [rad/s]
 phase1 = 0 # [rad]
-offset1 = -10 # [mm]
+offset1 = 0 # [mm]
 initial1 = (amp1, freq1, phase1, offset1) # For the actual data
 
 amp2 = 25 # [mm]
-freq2 = 3.9 # [krad/s]
+freq2 = 6.28 # [rad/s]
 phase2 = 0 # [rad]
 offset2 = 0 # [mm]
 initial2 = (amp2, freq2, phase2, offset2) # For the actual data

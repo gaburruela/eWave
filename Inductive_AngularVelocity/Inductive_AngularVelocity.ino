@@ -60,10 +60,10 @@ void loop() {
 
 
         // Print results
-        angularVelocity = averageFrequency * 2*PI; // rad/s
+        angularVelocity = averageFrequency * 60; // rpm
         Serial.print("Average Angular Velocity: ");
         Serial.print(angularVelocity);
-        Serial.println(" rad/s");
+        Serial.println(" rpm");
       }
     }
     delay(400); // Delay to avoid rapid measurements

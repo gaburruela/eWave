@@ -17,7 +17,7 @@ except serial.SerialException as e:
     exit()
 
 # Nombre del archivo CSV
-csv_filename = 't1_25.csv'
+csv_filename = 'DaGdAg_35.csv'
 
 # Espera unos segundos para asegurarse de que la conexión esté establecida
 time.sleep(2)

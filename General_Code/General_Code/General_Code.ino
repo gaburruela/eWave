@@ -1,5 +1,5 @@
-// Código unificado para UB1000
-// Includes: Dual measurements, calibration, zero-leveling, data to csv, uniformish time intervals
+// Código general v1
+// Includes: UB1000, Inductive, Accelerometer, Thermistors and Humidity
 
 // General variables
 const int num_med = 1; // average
