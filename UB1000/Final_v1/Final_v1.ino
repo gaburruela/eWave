@@ -1,5 +1,5 @@
 // Código unificado para UB1000
-// Includes: Dual measurements, calibration, zero-leveling, data to csv, uniformish time intervals
+// Includes: Dual measurements, calibration, zero-leveling, data to csv, uniformish time intervals, and filtering for sensing errors!
 
 // General variables
 const int num_med = 1; // average
@@ -8,7 +8,7 @@ const int med_zero = 100; // zero-leveling
 // Time variables [ms]
 unsigned long millis_previous = 0;
 unsigned long millis_current;
-const long time_interval = 125; // Response delay from datasheet
+const long time_interval = 40; // Around 40 Hz (jk)
 
 // Define sensor pins
 const int s1 = A5; // Not Bond
@@ -115,11 +115,13 @@ void loop() {
     s2_distance_calibrated = s2_distance_avg * s2_slope + s2_intercept;
 
 
-    // Print results to csv
-    Serial.print(float(millis_current) / 1000); // Time in seconds
-    Serial.print(",");
-    Serial.print(s1_distance_calibrated - s1_zero_lvl);
-    Serial.print(",");
-    Serial.println(s2_distance_calibrated - s2_zero_lvl);
+    // Print results to csv - With filter for if it turns off
+    if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
+      Serial.print(float(millis_current) / 1000); // Time in seconds
+      Serial.print(",");
+      Serial.print(s1_distance_calibrated - s1_zero_lvl);
+      Serial.print(",");
+      Serial.println(s2_distance_calibrated - s2_zero_lvl);
+    }
   }
 }

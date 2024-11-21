@@ -14,7 +14,7 @@ def function(x, amp, freq, phase, offset):
 
 # DATA READING AND PREPROCESSING
 # Read the actual data from csv file
-data = pandas.read_csv('DaGdAg_35.csv')
+data = pandas.read_csv('KKI_40.csv')
 x_full = np.array(data['Tiempo (s)'].tolist())
 y_full1 = np.array(data['Distancia 1 (mm)'].tolist())
 y_full2 = np.array(data['Distancia 2 (mm)'].tolist())
@@ -110,7 +110,7 @@ freq = (freq1 + freq2) / (4 * np.pi) # in Hz
 distance_sensors = 2220 # [mm]
 phase_diff = abs(phase2 - phase1) # [rad]
 
-crests = 1 # Number of crests between sensors
+crests = 2 # Number of crests between sensors
 
 # Correct for multiple wavelengths - Check on the actual wave or guess ranges?
 for i in range(crests - 1):

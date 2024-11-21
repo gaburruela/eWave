@@ -5,7 +5,7 @@ import time
 # Configura el puerto serie (ajusta el nombre del puerto según sea necesario)
 # En Windows, el puerto puede ser 'COM3', 'COM4', etc.
 # En Linux/Mac, el puerto suele ser '/dev/ttyUSB0' o '/dev/ttyACM0'
-port = 'COM9'  # Reemplaza 'COM3' con el puerto correcto
+port = 'COM10'  # COM9 para Andrés / COM10 para Daniel
 baudrate = 9600
 i = 0
 
@@ -17,7 +17,7 @@ except serial.SerialException as e:
     exit()
 
 # Nombre del archivo CSV
-csv_filename = 'DaGdAg_35.csv'
+csv_filename = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\UB1000\Regression\KKI_40.csv' # Para Daniel
 
 # Espera unos segundos para asegurarse de que la conexión esté establecida
 time.sleep(2)
