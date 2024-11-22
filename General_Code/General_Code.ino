@@ -9,23 +9,27 @@ Adafruit_MPU6050 mpu;
 
 
 // INDUCTIVE
-const int sensorPin = 8; // Digital pin connected to the infrared/inductive sensor
-const int numMeasurements = 3; // Number of measurements to average
+const int ind_pin = 8; // Digital pin connected to the infrared/inductive sensor
+const int ind_measurements = 3; // Number of measurements to average
 
-bool firstPulseDetected = false; // Flag to check if the first pulse has been detected (only used once)
-unsigned long lastPulseTime = 0; // Time of the last detected signal
-unsigned long currentPulseTime = 0; // Time of the current detected signal
-unsigned long timeInterval = 0; // Time between last and current detected signals
+bool ind_firstPulseDetected = false; // Flag to check if the first pulse has been detected (only used once)
+unsigned long ind_lastPulseTime = 0; // Time of the last detected signal
+unsigned long ind_currentPulseTime = 0; // Time of the current detected signal
+unsigned long ind_timeInterval = 0; // Time between last and current detected signals
 
-int measurementIndex = 0; // Index for storing measurements
-float measurements[numMeasurements] = {0}; // Array to store measurements
-float averageFrequency = 0;
-float angularVelocity = 0;
+float ind_freq = 0; // Value to store measurements
+float ind_avg_freq = 0;
 
-bool inductive_flag = false;
+int ind_counter = 1;
 
 
-// Ultrasonics UB1000
+// HUMIDITY DHT11
+#include "DHTStable.h"
+DHTStable DHT;
+#define DHT11_PIN 4
+
+
+// ULTRASONICS UB1000
 // General variables
 const int num_med = 1; // average
 const int med_zero = 100; // zero-leveling
@@ -111,7 +115,10 @@ void setup(void) {
 
 
   // INDUCTIVE
-  pinMode(sensorPin, INPUT); // Sensor pin as input with pull-up resistor
+  pinMode(ind_pin, INPUT); // Sensor pin as input with pull-up resistor
+
+  // HUMIDITY
+  // Nothing to do, yay
 
 
   // ULTRASONICS
@@ -140,6 +147,9 @@ void setup(void) {
   Serial.println(s2_zero_lvl);
 }
 
+
+
+
 void loop() {
   // UNIFORM INTERVALS
   millis_current = millis();
@@ -158,67 +168,72 @@ void loop() {
 
     // INDUCTIVE
     // Check the sensor pin
-    if (digitalRead(sensorPin) == HIGH) { // LOW for infrared, HIGH for inductive
-      currentPulseTime = millis(); // Store current time
+    if (digitalRead(ind_pin) == HIGH) { // LOW for infrared, HIGH for inductive
+      ind_currentPulseTime = millis(); // Store current time
 
-      // If this is the first pulse detected, initialize the lastPulseTime
-      if (!firstPulseDetected) {
-        firstPulseDetected = true;
-        lastPulseTime = currentPulseTime; // Set the initial pulse time
+      // If this is the first pulse detected, initialize the ind_lastPulseTime
+      if (!ind_firstPulseDetected) {
+        ind_firstPulseDetected = true;
+        ind_lastPulseTime = ind_currentPulseTime; // Set the initial pulse time
         }
       
       // Any subsequent pulse
       else{
         // Calculate time between pulses
-        timeInterval = currentPulseTime - lastPulseTime;
+        ind_timeInterval = ind_currentPulseTime - ind_lastPulseTime;
         // Update the last pulse time
-        lastPulseTime = currentPulseTime;
+        ind_lastPulseTime = ind_currentPulseTime;
 
+        // Calculate frequency and update ind_freq
+        ind_freq += 1000.0 / ind_timeInterval; // Frecuency in Hz
 
         //Still in-bounds
-        if (measurementIndex < numMeasurements - 1) {
-          // Calculate frequency and update measurements
-          measurements[measurementIndex] = 1000.0 / timeInterval; // Frecuency in Hz
-          measurementIndex += 1;
+        if (ind_counter < ind_measurements) {          
+          ind_counter += 1;
         }
         // Out of bounds
         else {
-          measurements[measurementIndex] = 1000.0 / timeInterval; // Last measurement
-          measurementIndex = 0; // Reset measurement index
+          ind_counter = 0; // Reset measurement index
 
-        // Take the average of all measurements
-        averageFrequency = 0; // Reset previous value
-          for (int i = 0; i < numMeasurements; i++) {
-            averageFrequency += measurements[i];
-          }
-          averageFrequency /= numMeasurements;
-          inductive_flag = true;
-
-
-          // Print results
-          angularVelocity = averageFrequency * 60; // rpm
-          Serial.print("Average Angular Velocity: ");
-          Serial.print(angularVelocity);
-          Serial.println(" rpm");
+          // Take the average of all measurements
+          ind_avg_freq = ind_freq / ind_measurements;
+          ind_avg_freq = ind_avg_freq * 60; // convert to rpm
         }
       }
-      delay(400); // Delay to avoid rapid measurements
-  }
+      //delay(400); // Delay to avoid rapid measurements
+    }
+
+
+    // HUMIDITY
+    // Read data
+    /*
+    int chk = DHT.read11(DHT11_PIN);
+    switch (chk) {
+      case DHTLIB_OK:
+        Serial.print("OK,\t");
+        break;
+      case DHTLIB_ERROR_CHECKSUM:
+        Serial.print("Checksum error,\t");
+        break;
+      case DHTLIB_ERROR_TIMEOUT:
+        Serial.print("Time out error,\t");
+        break;
+      default:
+        Serial.print("Unknown error,\t");
+        break;
+    }
+    */
+    //delay(2000);
+
 
     // ULTRASONICS
     s1_distance_avg = 0;
     s2_distance_avg = 0;
-    for (int i = 0; i < num_med; i++) {
-      s1_voltage = analogRead(s1);
-      s2_voltage = analogRead(s2);
-      s1_distance_avg = s1_distance_avg + mapping(s1_voltage, 1);
-      s2_distance_avg = s2_distance_avg + mapping(s2_voltage, 2);
 
-      // Only for averages
-      if (num_med > 1) {
-        delay(50);
-      }
-    }
+    s1_voltage = analogRead(s1);
+    s2_voltage = analogRead(s2);
+    s1_distance_avg += mapping(s1_voltage, 1);
+    s2_distance_avg += mapping(s2_voltage, 2);
     
     // Get averages
     s1_distance_avg = s1_distance_avg / num_med;
@@ -232,7 +247,7 @@ void loop() {
 
     // PRINT OUT ALL THE VALUES
     // First line per sensor is title, delete when actually saving data
-    // Also change all final println to regular print for each sensor, all sensors should be within the same line
+    // Also change all final println to regular print for each sensor (except ultrasonics), all sensors should be within the same line
 
     // Print results to csv - With filter for if ultrasonics turn off
     if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
@@ -240,7 +255,7 @@ void loop() {
       // Time
       Serial.println("Time (s)");
       Serial.print(float(millis_current) / 1000); // Time in seconds
-      Serial.print(",");
+      //Serial.print(",");
       Serial.println("");
 
       // Accelerometer
@@ -250,7 +265,21 @@ void loop() {
       Serial.print(a.acceleration.y);
       Serial.print(",");
       Serial.println(a.acceleration.z);
+      //Serial.print(",");
+      Serial.println("");
+
+      // Inductive
+      Serial.println("Angular Velocity (rpm)");
+      Serial.print(ind_avg_freq);
+      //Serial.print(",");
+      Serial.println("");
+
+      // Humidity
+      Serial.println("Humidity (%), Temperature (°C)");
+      Serial.print(DHT.getHumidity(), 1);
       Serial.print(",");
+      Serial.println(DHT.getTemperature(), 1);
+      //Serial.print(",");
       Serial.println("");
 
       // Ultrasonics
