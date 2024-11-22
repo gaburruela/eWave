@@ -131,7 +131,7 @@ float mapping(float signal, int sensor) {
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("There's communication!");
 
   // ACCELEROMETER
@@ -234,7 +234,8 @@ void loop() {
         ind_freq = 0; // Reset frequency variable
       }
     }
-    //delay(400); // Delay to avoid rapid measurements
+    delay(200); // Delay to avoid rapid measurements
+    Serial.println(":):):):):):):):):):):)");
   }
   
 
@@ -274,7 +275,7 @@ void loop() {
     */
     //delay(2000);
 
-
+    
     // THERMISTORS
     //Lectura del Arduino
     SensorValue_W = analogRead(Term_Water);
@@ -290,7 +291,7 @@ void loop() {
     R_T_M = R_1_M * V_O_M / (V_ref - V_O_M);
     T_M = 1/(log(R_T_M/R0_M)/B_M + 1/T0_M) - 273.15;
 
-    delay(2000);
+    //delay(2000);
 
 
     // ULTRASONICS
@@ -335,7 +336,7 @@ void loop() {
       Serial.print(a.acceleration.z);
       //Serial.print(",");
       Serial.println("");
-
+      
       // Inductive
       Serial.println("Angular Velocity (rpm)");
       Serial.print(ind_avg_freq);
@@ -357,7 +358,7 @@ void loop() {
       Serial.print(T_M);
       //Serial.print(",");
       Serial.println("");
-
+      
       // Ultrasonics
       Serial.println("Height (mm) s1, s2");
       Serial.print(s1_distance_calibrated - s1_zero_lvl);
