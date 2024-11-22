@@ -26,7 +26,7 @@ int ind_counter = 1;
 // HUMIDITY DHT11
 #include "DHTStable.h"
 DHTStable DHT;
-#define DHT11_PIN 4
+#define DHT11_PIN 9
 
 
 // THERMISTORS
@@ -81,8 +81,8 @@ unsigned long millis_current;
 const long time_interval = 40; // Around 40
 
 // Define sensor pins
-const int s1 = A5; // Not Bond
-const int s2 = A4; // Bond
+const int s1 = A3; // Not Bond
+const int s2 = A2; // Bond
 
 // Sensor 1 variables
 float s1_voltage;
@@ -130,11 +130,12 @@ float mapping(float signal, int sensor) {
 
 
 
-void setup(void) {
+void setup() {
   Serial.begin(9600);
+  Serial.println("There's communication!");
 
   // ACCELEROMETER
-	// Try to initialize!
+	// Try to initialize
 	if (!mpu.begin()) {
 		Serial.println("Failed to find MPU6050 chip");
 		while (1) {
@@ -197,6 +198,46 @@ void setup(void) {
 
 
 void loop() {
+  // INDUCTIVE
+  // Check the sensor pin
+  if (digitalRead(ind_pin) == HIGH) { // LOW for infrared, HIGH for inductive
+    ind_currentPulseTime = millis(); // Store current time
+
+    // If this is the first pulse detected, initialize the ind_lastPulseTime
+    if (!ind_firstPulseDetected) {
+      ind_firstPulseDetected = true;
+      ind_lastPulseTime = ind_currentPulseTime; // Set the initial pulse time
+      }
+    
+    // Any subsequent pulse
+    else {
+      // Calculate time between pulses
+      ind_timeInterval = ind_currentPulseTime - ind_lastPulseTime;
+      // Update the last pulse time
+      ind_lastPulseTime = ind_currentPulseTime;
+
+      // Calculate frequency and update ind_freq
+      ind_freq += 1000.0 / ind_timeInterval; // Frecuency in Hz
+
+      //Still in-bounds
+      if (ind_counter < ind_measurements) {          
+        ind_counter += 1;
+      }
+      // Out of bounds
+      else {
+        ind_counter = 1; // Reset measurement index
+
+        // Take the average of all measurements
+        ind_avg_freq = ind_freq / ind_measurements;
+        ind_avg_freq = ind_avg_freq * 60; // convert to rpm
+
+        ind_freq = 0; // Reset frequency variable
+      }
+    }
+    //delay(400); // Delay to avoid rapid measurements
+  }
+  
+
   // UNIFORM INTERVALS
   millis_current = millis();
 
@@ -210,44 +251,6 @@ void loop() {
     mpu.getEvent(&a, &g, &temp);
 
     //delay(50);
-
-
-    // INDUCTIVE
-    // Check the sensor pin
-    if (digitalRead(ind_pin) == HIGH) { // LOW for infrared, HIGH for inductive
-      ind_currentPulseTime = millis(); // Store current time
-
-      // If this is the first pulse detected, initialize the ind_lastPulseTime
-      if (!ind_firstPulseDetected) {
-        ind_firstPulseDetected = true;
-        ind_lastPulseTime = ind_currentPulseTime; // Set the initial pulse time
-        }
-      
-      // Any subsequent pulse
-      else{
-        // Calculate time between pulses
-        ind_timeInterval = ind_currentPulseTime - ind_lastPulseTime;
-        // Update the last pulse time
-        ind_lastPulseTime = ind_currentPulseTime;
-
-        // Calculate frequency and update ind_freq
-        ind_freq += 1000.0 / ind_timeInterval; // Frecuency in Hz
-
-        //Still in-bounds
-        if (ind_counter < ind_measurements) {          
-          ind_counter += 1;
-        }
-        // Out of bounds
-        else {
-          ind_counter = 0; // Reset measurement index
-
-          // Take the average of all measurements
-          ind_avg_freq = ind_freq / ind_measurements;
-          ind_avg_freq = ind_avg_freq * 60; // convert to rpm
-        }
-      }
-      //delay(400); // Delay to avoid rapid measurements
-    }
 
 
     // HUMIDITY
@@ -324,12 +327,12 @@ void loop() {
       Serial.println("");
 
       // Accelerometer
-      Serial.println("Acceleration (m^2/s) x,y,z");
+      Serial.println("Acceleration (m^2/s) x, y, z");
       Serial.print(a.acceleration.x);
       Serial.print(",");
       Serial.print(a.acceleration.y);
       Serial.print(",");
-      Serial.println(a.acceleration.z);
+      Serial.print(a.acceleration.z);
       //Serial.print(",");
       Serial.println("");
 
@@ -356,7 +359,7 @@ void loop() {
       Serial.println("");
 
       // Ultrasonics
-      Serial.println("Height (mm) s1,s2");
+      Serial.println("Height (mm) s1, s2");
       Serial.print(s1_distance_calibrated - s1_zero_lvl);
       Serial.print(",");
       Serial.println(s2_distance_calibrated - s2_zero_lvl);
