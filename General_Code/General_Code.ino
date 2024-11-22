@@ -29,6 +29,47 @@ DHTStable DHT;
 #define DHT11_PIN 4
 
 
+// THERMISTORS
+//Librería para logaritmo
+#include <math.h>
+
+// Pines del Arduino
+#define Term_Water A1
+#define Term_Motor A0
+
+float V_ref = 5; //Voltaje del Arduino
+
+//Datos del termistor water
+
+float R_1_W = 5200; //Resistencia fija
+float V_O_W; //Tensión de salida - Medición
+float R_T_W; //Resistencia variable del termistor - Cálculo
+
+int SensorValue_W; //Entrada analógica del Arduino
+
+float T_W; //Temperatura medida - Cálculo
+
+//Parámetros del termistor - Beta model
+float R0_W = 10000; // [Ω]
+float T0_W = 298.15; // [K]
+float B_W = 3435; // [K]
+
+//Datos del termistor motor
+
+float R_1_M = 5088; //Resistencia fija
+float V_O_M; //Tensión de salida - Medición
+float R_T_M; //Resistencia variable del termistor - Cálculo
+
+int SensorValue_M; //Entrada analógica del Arduino
+
+float T_M; //Temperatura medida - Cálculo
+
+//Parámetros del termistor - Beta model
+float R0_M = 1000; // [Ω]
+float T0_M = 298.15; // [K]
+float B_M = 3800; // [K]
+
+
 // ULTRASONICS UB1000
 // General variables
 const int num_med = 1; // average
@@ -119,6 +160,11 @@ void setup(void) {
 
   // HUMIDITY
   // Nothing to do, yay
+
+
+  // THERMISTORS
+  pinMode(Term_Water, INPUT);
+  pinMode(Term_Motor, INPUT);
 
 
   // ULTRASONICS
@@ -226,6 +272,24 @@ void loop() {
     //delay(2000);
 
 
+    // THERMISTORS
+    //Lectura del Arduino
+    SensorValue_W = analogRead(Term_Water);
+    V_O_W = SensorValue_W * V_ref / 1023;
+
+    SensorValue_M = analogRead(Term_Motor);
+    V_O_M = SensorValue_M * V_ref / 1023; //Mapeo
+
+    //Fórmulas obtenidas
+    R_T_W = R_1_W * V_O_W / (V_ref - V_O_W); //Divisor de tensión
+    T_W = 1/(log(R_T_W/R0_W)/B_W + 1/T0_W) - 273.15; //Ecuación de beta - Conversión a °C
+
+    R_T_M = R_1_M * V_O_M / (V_ref - V_O_M);
+    T_M = 1/(log(R_T_M/R0_M)/B_M + 1/T0_M) - 273.15;
+
+    delay(2000);
+
+
     // ULTRASONICS
     s1_distance_avg = 0;
     s2_distance_avg = 0;
@@ -242,6 +306,7 @@ void loop() {
     // Calibration
     s1_distance_calibrated = s1_distance_avg * s1_slope + s1_intercept;
     s2_distance_calibrated = s2_distance_avg * s2_slope + s2_intercept;
+
 
 
 
@@ -278,7 +343,15 @@ void loop() {
       Serial.println("Humidity (%), Temperature (°C)");
       Serial.print(DHT.getHumidity(), 1);
       Serial.print(",");
-      Serial.println(DHT.getTemperature(), 1);
+      Serial.print(DHT.getTemperature(), 1);
+      //Serial.print(",");
+      Serial.println("");
+
+      // Thermistors
+      Serial.println("Water_temp,Motor_temp (°C)");
+      Serial.print(T_W);
+      Serial.print(",");
+      Serial.print(T_M);
       //Serial.print(",");
       Serial.println("");
 
