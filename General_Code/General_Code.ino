@@ -188,7 +188,7 @@ void setup(void) {
   s1_zero_lvl = s1_zero_lvl * s1_slope + s1_intercept;
   s2_zero_lvl = s2_zero_lvl * s2_slope + s2_intercept;
 
-  Serial.println("Zero levels:")
+  Serial.println("Zero levels:");
   Serial.println(s1_zero_lvl);
   Serial.println(s2_zero_lvl);
 }
@@ -324,7 +324,7 @@ void loop() {
       Serial.println("");
 
       // Accelerometer
-      Serial.println("Acceleration (m^2/s) x,y,z")
+      Serial.println("Acceleration (m^2/s) x,y,z");
       Serial.print(a.acceleration.x);
       Serial.print(",");
       Serial.print(a.acceleration.y);
