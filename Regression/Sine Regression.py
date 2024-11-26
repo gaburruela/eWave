@@ -14,14 +14,20 @@ def function(x, amp, freq, phase, offset):
 
 # DATA READING AND PREPROCESSING
 # Read the actual data from csv file
-data = pandas.read_csv('KKI_40.csv')
-x_full = np.array(data['Tiempo (s)'].tolist())
-y_full1 = np.array(data['Distancia 1 (mm)'].tolist())
-y_full2 = np.array(data['Distancia 2 (mm)'].tolist())
+#csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
+csv_path = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\\' # Para Andrés
+csv_filename = csv_path + 'KKI_30.csv'
+
+
+data = pandas.read_csv(csv_filename)
+x_full = np.array(data['Time (s)'].tolist())
+y_full1 = np.array(data['Height 1 (mm)'].tolist())
+y_full2 = np.array(data['Height 2 (mm)'].tolist())
 
 # Use only some of the data in case of errors
 max_data = 200 # Total data points to use (minus bad_data)
-bad_data = np.where(x_full==5.04)[0][0] # First data points to ignore - Automatic
+#bad_data = np.where(x_full==31.49)[0][0] # First data points to ignore - Automatic
+bad_data = 0
 
 x_data = x_full[bad_data:max_data-bad_data]
 y_data1 = y_full1[bad_data:max_data-bad_data]

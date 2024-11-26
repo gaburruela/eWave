@@ -17,7 +17,8 @@ except serial.SerialException as e:
     exit()
 
 # Nombre del archivo CSV
-csv_filename = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\UB1000\Regression\KKI_40.csv' # Para Daniel
+#csv_filename = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\KKI_40.csv' # Para Daniel
+csv_filename = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\KKI_30.csv' # Para Andrés
 
 # Espera unos segundos para asegurarse de que la conexión esté establecida
 time.sleep(2)
@@ -26,7 +27,7 @@ time.sleep(2)
 with open(csv_filename, mode='w', newline='') as file:
     writer = csv.writer(file)
     # Escribe los encabezados del archivo CSV
-    writer.writerow(["Tiempo (s)", "Distancia 1 (mm)", "Distancia 2 (mm)"])
+    writer.writerow(["Time (s)", "Accel_x (m2/s)", "Accel_y (m2/s)", "Accel_z (m2/s)", "RPM", "Humidity (percentage)", "Amb_Temp (C)", "Water_Temp (C)", "Motor_Temp (C)", "Height 1 (mm)", "Height 2 (mm)"])
 
     try:
         while i < 400:
@@ -35,7 +36,7 @@ with open(csv_filename, mode='w', newline='') as file:
                 line = ser.readline().decode('utf-8').strip()
                 # Divide la línea en tiempo y temperatura
                 data = line.split(',')
-                if len(data) == 3:
+                if len(data) == 11:
                     # Escribe los datos en el archivo CSV
                     writer.writerow(data)
                     #print(f"Datos guardados: {data}")

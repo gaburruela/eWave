@@ -275,45 +275,45 @@ void Print_Results() {
   // Also change all final println to regular print for each sensor (except ultrasonics), all sensors should be within the same line
 
   // Time
-  Serial.println("Time (s)");
+  //Serial.println("Time (s)");
   Serial.print(float(millis_current) / 1000); // Time in seconds
-  //Serial.print(",");
-  Serial.println("");
+  Serial.print(",");
+  //Serial.println("");
 
   // Accelerometer
-  Serial.println("Acceleration (m^2/s) x, y, z");
+  //Serial.println("Acceleration (m^2/s) x, y, z");
   Serial.print(a.acceleration.x);
   Serial.print(",");
   Serial.print(a.acceleration.y);
   Serial.print(",");
   Serial.print(a.acceleration.z);
-  //Serial.print(",");
-  Serial.println("");
+  Serial.print(",");
+  //Serial.println("");
   
   // Inductive
-  Serial.println("Angular Velocity (rpm)");
+  //Serial.println("Angular Velocity (rpm)");
   Serial.print(ind_avg_freq);
-  //Serial.print(",");
-  Serial.println("");
+  Serial.print(",");
+  //Serial.println("");
 
   // Humidity
-  Serial.println("Humidity (%), Temperature (°C)");
+  //Serial.println("Humidity (%), Temperature (°C)");
   Serial.print(DHT.getHumidity(), 1);
   Serial.print(",");
   Serial.print(DHT.getTemperature(), 1);
-  //Serial.print(",");
-  Serial.println("");
+  Serial.print(",");
+  //Serial.println("");
 
   // Thermistors
-  Serial.println("Water_temp, Motor_temp (°C)");
+  //Serial.println("Water_temp, Motor_temp (°C)");
   Serial.print(T_W);
   Serial.print(",");
   Serial.print(T_M);
-  //Serial.print(",");
-  Serial.println("");
+  Serial.print(",");
+  //Serial.println("");
   
   // Ultrasonics
-  Serial.println("Height (mm) s1, s2");
+  //Serial.println("Height (mm) s1, s2");
   Serial.print(s1_distance_calibrated - s1_zero_lvl);
   Serial.print(",");
   Serial.println(s2_distance_calibrated - s2_zero_lvl);
