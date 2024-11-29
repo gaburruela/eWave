@@ -14,9 +14,9 @@ def function(x, amp, freq, phase, offset):
 
 # DATA READING AND PREPROCESSING
 # Read the actual data from csv file
-#csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
-csv_path = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\\' # Para Andrés
-csv_filename = csv_path + 'KKI_30.csv'
+csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
+#csv_path = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\\' # Para Andrés
+csv_filename = csv_path + 'Ultra_KKI_v2_20.csv'
 
 
 data = pandas.read_csv(csv_filename)
@@ -41,13 +41,13 @@ y_data2 = y_full2[bad_data:max_data-bad_data]
 # Use excel as a lookup table to approximate
 
 amp1 = 25 # [mm]
-freq1 = 6.28 # [rad/s]
+freq1 = 3.11 # [rad/s]
 phase1 = 0 # [rad]
 offset1 = 0 # [mm]
 initial1 = (amp1, freq1, phase1, offset1) # For the actual data
 
 amp2 = 25 # [mm]
-freq2 = 6.28 # [rad/s]
+freq2 = 3.11 # [rad/s]
 phase2 = 0 # [rad]
 offset2 = 0 # [mm]
 initial2 = (amp2, freq2, phase2, offset2) # For the actual data
@@ -116,7 +116,7 @@ freq = (freq1 + freq2) / (4 * np.pi) # in Hz
 distance_sensors = 2220 # [mm]
 phase_diff = abs(phase2 - phase1) # [rad]
 
-crests = 2 # Number of crests between sensors
+crests = 1 # Number of crests between sensors
 
 # Correct for multiple wavelengths - Check on the actual wave or guess ranges?
 for i in range(crests - 1):

@@ -9,11 +9,11 @@
 
 DHTStable DHT;
 
-#define DHT11_PIN 4
+#define DHT11_PIN 9
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println(__FILE__);
   Serial.print("LIBRARY VERSION: ");
   Serial.println(DHTSTABLE_LIB_VERSION);

@@ -1,7 +1,7 @@
 // Código unificado general :)
 
 // BUTTON - Change from zero leveling (0) to inductive (1) to everything else (2)
-int button_counter = 3;
+int button_counter = 4;
 int button_pin = 10;
 int button_rst = 11;
 
@@ -36,6 +36,8 @@ int ind_counter = 1;
 #include "DHTStable.h"
 DHTStable DHT;
 #define DHT11_PIN 9
+float humid = 0;
+float amb_temp = 0;
 
 
 // THERMISTORS
@@ -202,6 +204,14 @@ void Inductive() {
   }
 }
 
+// Humidity
+void Humidity() {
+  DHT.read11(DHT11_PIN);
+  humid = DHT.getHumidity();
+  amb_temp = DHT.getTemperature();
+  delay(2000);
+}
+
 // All the measurements
 void All_Measurements() {
   // ACCELEROMETER
@@ -270,55 +280,77 @@ void All_Measurements() {
 
 // Print results
 void Print_Results() {
-  // PRINT OUT ALL THE VALUES
-  // First line per sensor is title, delete when actually saving data
-  // Also change all final println to regular print for each sensor (except ultrasonics), all sensors should be within the same line
-
+  // PRINT OUT ALL THE VALUES FOR TESTING ONLY
   // Time
-  //Serial.println("Time (s)");
-  Serial.print(float(millis_current) / 1000); // Time in seconds
-  Serial.print(",");
-  //Serial.println("");
+  Serial.println("Time (s)");
+  Serial.println(float(millis_current) / 1000); // Time in seconds
 
   // Accelerometer
-  //Serial.println("Acceleration (m^2/s) x, y, z");
+  Serial.println("Acceleration (m^2/s) x, y, z");
+  Serial.print(a.acceleration.x);
+  Serial.print(",");
+  Serial.print(a.acceleration.y);
+  Serial.print(",");
+  Serial.println(a.acceleration.z);
+  
+  // Inductive
+  Serial.println("Angular Velocity (rpm)");
+  Serial.println(ind_avg_freq);
+
+  // Humidity
+  Serial.println("Humidity (%), Temperature (°C)");
+  Serial.print(humid);
+  Serial.print(",");
+  Serial.println(amb_temp);
+
+  // Thermistors
+  Serial.println("Water_temp, Motor_temp (°C)");
+  Serial.print(T_W);
+  Serial.print(",");
+  Serial.println(T_M);
+  
+  // Ultrasonics
+  Serial.println("Height (mm) s1, s2");
+  Serial.print(s1_distance_calibrated - s1_zero_lvl);
+  Serial.print(",");
+  Serial.println(s2_distance_calibrated - s2_zero_lvl);
+}
+
+void CSV_Results() {
+  // PRINT OUT ALL THE VALUES TO CSV
+  // Time
+  Serial.print(float(millis_current) / 1000); // Time in seconds
+  Serial.print(",");
+
+  // Accelerometer
   Serial.print(a.acceleration.x);
   Serial.print(",");
   Serial.print(a.acceleration.y);
   Serial.print(",");
   Serial.print(a.acceleration.z);
   Serial.print(",");
-  //Serial.println("");
   
   // Inductive
-  //Serial.println("Angular Velocity (rpm)");
   Serial.print(ind_avg_freq);
   Serial.print(",");
-  //Serial.println("");
 
   // Humidity
-  //Serial.println("Humidity (%), Temperature (°C)");
   Serial.print(DHT.getHumidity(), 1);
   Serial.print(",");
   Serial.print(DHT.getTemperature(), 1);
   Serial.print(",");
-  //Serial.println("");
 
   // Thermistors
-  //Serial.println("Water_temp, Motor_temp (°C)");
   Serial.print(T_W);
   Serial.print(",");
   Serial.print(T_M);
   Serial.print(",");
-  //Serial.println("");
   
   // Ultrasonics
-  //Serial.println("Height (mm) s1, s2");
   Serial.print(s1_distance_calibrated - s1_zero_lvl);
   Serial.print(",");
   Serial.println(s2_distance_calibrated - s2_zero_lvl);
 }
-
 
 
 void setup() {
@@ -376,7 +408,7 @@ void loop() {
   // Button state change
   if (digitalRead(button_pin) == 1) {
     button_counter += 1;
-    delay(2000); // 2 senconds to change button state
+    delay(7000); // 7 senconds to change button state
   }
 
   // Button Reset
@@ -397,6 +429,10 @@ void loop() {
       break;
 
     case 2:
+      Humidity();
+      break;
+
+    case 3:
       // UNIFORM INTERVALS
       millis_current = millis();
 
@@ -407,7 +443,8 @@ void loop() {
         
         // Print results to csv - With filter for if ultrasonics turn off
         if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
-          Print_Results();
+          //Print_Results();
+          CSV_Results();
         }
       }
       break;
