@@ -8,6 +8,7 @@ import time
 port = 'COM10'  # COM9 para Andrés / COM10 para Daniel
 baudrate = 115200
 i = 0
+max_measurements = 2000
 
 try:
     ser = serial.Serial(port, baudrate)
@@ -17,8 +18,13 @@ except serial.SerialException as e:
     exit()
 
 # Nombre del archivo CSV
-csv_filename = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\Ultra_KKI_v2_20.csv' # Para Daniel
-#csv_filename = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\KKI_30.csv' # Para Andrés
+crank_pos = str(input('Crank Position: '))
+motor_freq = input('Motor Frequency (Hz): ')
+
+csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
+#csv_path = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\\' # Para Andrés
+
+csv_filename = csv_path + crank_pos + str(motor_freq) + '.csv'
 
 # Espera unos segundos para asegurarse de que la conexión esté establecida
 time.sleep(2)
@@ -30,7 +36,7 @@ with open(csv_filename, mode='w', newline='') as file:
     writer.writerow(["Time (s)", "Accel_x (m2/s)", "Accel_y (m2/s)", "Accel_z (m2/s)", "RPM", "Humidity (percentage)", "Amb_Temp (C)", "Water_Temp (C)", "Motor_Temp (C)", "Height 1 (mm)", "Height 2 (mm)"])
 
     try:
-        while i < 400:
+        while i < max_measurements:
             if ser.in_waiting > 0:
                 # Lee una línea del puerto serie
                 line = ser.readline().decode('utf-8').strip()
