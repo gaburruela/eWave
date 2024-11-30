@@ -53,28 +53,21 @@ plt.show()
 
 
 # Get data from ultrasonic sensors
-x_full = np.array(data['Time (s)'].tolist())
-y_full1 = np.array(data['Height 1 (mm)'].tolist())
-y_full2 = np.array(data['Height 2 (mm)'].tolist())
+x_data = np.array(data['Time (s)'].tolist())
+y_data1 = np.array(data['Height 1 (mm)'].tolist())
+y_data2 = np.array(data['Height 2 (mm)'].tolist())
 
-# Use only some of the data in case of errors
-max_data = 400 # Total data points to use (minus bad_data)
-
-x_data = x_full[0:max_data]
 x_data = x_data - x_data[0] # Phaseshift to start measurements at zero
 
-y_data1 = y_full1[0:max_data]
-y_data2 = y_full2[0:max_data]
-
 # Preliminary graphs to make initial guesses
-plt.subplot(211)
+plt.subplot(211) # For initial guesses
 plt.plot(x_data, y_data1, color='m', label='No Bond')
 plt.ylabel('Height (mm)')
 plt.legend()
 plt.title('Heights for initial guesses')
 
-plt.subplot(212)
-plt.plot(x_data, y_data2, color='c', label='Bond')
+plt.subplot(212) # For seeing trends in a lot more data
+plt.plot(x_data[0:200], y_data2[0:200], color='c', label='Bond')
 plt.xlabel('Time (s)')
 plt.ylabel('Height (mm)')
 plt.legend()
@@ -84,7 +77,7 @@ plt.show()
 
 # Input guesses
 print('\nInput educated guesses:')
-amp1 = float(input('Amplitude (mm): '))
+amp1 = float(input('Peak-peak (mm): '))/2
 freq1 = 2*np.pi/float(input('Period (s): '))
 
 amp2 = amp1
@@ -172,7 +165,7 @@ freq = (freq1 + freq2) / (4 * np.pi) # in Hz
 distance_sensors = 2220 # [mm]
 phase_diff = abs(phase2 - phase1) # [rad]
 
-crests = 1 # Number of crests between sensors
+crests = int(input('\nNumber of crests between sensors: ')) # Number of crests between sensors
 
 # Correct for multiple wavelengths - Check on the actual wave or guess ranges?
 for i in range(crests - 1):
@@ -187,14 +180,30 @@ freq = round(freq, 3)
 wavelength = round(wavelength, 3)
 
 # Display results
-print("\nRegression results:")
-print("Amplitude:", amp, "mm")
-print("Frequency:", freq, "Hz")
-print("Wavelength:", wavelength, "m")
+print('\nRegression results:')
+print('Amplitude:', amp, 'mm')
+print('Frequency:', freq, 'Hz')
+print('Wavelength:', wavelength, 'm')
+
+# Get real measurements
+print('\nReal measurements:')
+real_amp = float(input('Real peak-peak (cm): '))/0.2
+real_freq = 5/float(input('Real 5 periods (s): '))
+real_wavelength = float(input('Real wavelength (m): '))
+
+# Round results
+real_amp = round(real_amp, 2)
+real_freq = round(real_freq, 3)
+real_wavelength = round(real_wavelength, 3)
 
 
 # Abre el archivo CSV en modo de escritura
 if (input('\nSave data? (y/n): ') == 'y'):
     results_file = open('results.csv', mode='a')
-    results_file.write('\n' + crank_pos + ',' + motor_freq + ',' + str(amp) + ',' + str(freq) + ',' + str(wavelength))
+    # Name of the test
+    results_file.write('\n' + crank_pos + ',' + motor_freq + ',')
+    # Regression results vs Real measurements
+    results_file.write(str(amp) + ',' + str(real_amp) + ',')
+    results_file.write(str(freq) + ',' + str(real_freq) + ',')
+    results_file.write(str(wavelength) + ',' + str(real_wavelength))
     results_file.close()

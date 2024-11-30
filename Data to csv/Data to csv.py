@@ -8,7 +8,7 @@ import time
 port = 'COM10'  # COM9 para Andrés / COM10 para Daniel
 baudrate = 115200
 i = 0
-max_measurements = 2000
+max_measurements = 1000
 
 try:
     ser = serial.Serial(port, baudrate)
@@ -20,6 +20,8 @@ except serial.SerialException as e:
 # Nombre del archivo CSV
 crank_pos = str(input('Crank Position: '))
 motor_freq = input('Motor Frequency (Hz): ')
+
+print('Ready to start measurements!')
 
 csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
 #csv_path = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\\' # Para Andrés
