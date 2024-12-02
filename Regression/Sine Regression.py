@@ -75,18 +75,19 @@ plt.legend()
 plt.show()
 
 
+
+# REGRESSION
+# Define initial guesses
+# Frequency is the one messing everything up - has to be within 0.0002 of real value
+
 # Input guesses
 print('\nInput educated guesses:')
 amp1 = float(input('Peak-peak (mm): '))/2
 freq1 = 2*np.pi/float(input('Period (s): '))
 
-amp2 = amp1
-freq2 = freq1
+amp2 = amp1 # [mm]
+freq2 = freq1 # [rad/s]
 
-
-# REGRESSION
-# Define initial guesses
-# Frequency is the one messing everything up - has to be within 0.0002 of real value
 
 phase1 = 0 # [rad]
 offset1 = 0 # [mm]
@@ -118,7 +119,7 @@ if popt1[0] < 0:
     phase1 = phase1 + np.pi
 
 # Get phase between 0 and 2pi
-if phase1 > 2*np.pi or phase1 < 0:
+if phase1 >= 2*np.pi or phase1 < 0:
     phase1 = phase1 - phase1//(2*np.pi) * 2*np.pi
 
 y_pred1 = amp1*np.sin(freq1*x_data + phase1) + offset1
@@ -132,7 +133,7 @@ if popt2[0] < 0:
     amp2 = amp2 * -1
     phase2 = phase2 + np.pi
 
-if phase2 > 2*np.pi or phase2 < 0:
+if phase2 >= 2*np.pi or phase2 < 0:
     phase2 = phase2 - phase2//(2*np.pi) * 2*np.pi
 
 y_pred2 = amp2*np.sin(freq2*x_data + phase2) + offset2
@@ -163,7 +164,8 @@ freq = (freq1 + freq2) / (4 * np.pi) # in Hz
 
 # Get wavelength
 distance_sensors = 2220 # [mm]
-phase_diff = abs(phase2 - phase1) # [rad]
+phase_diff = phase2 - phase1 # [rad] - Order does matter (Bond comes first)
+phase_diff = phase_diff % (2*np.pi) # Get between 0 and 2pi
 
 crests = int(input('\nNumber of crests between sensors: ')) # Number of crests between sensors
 
