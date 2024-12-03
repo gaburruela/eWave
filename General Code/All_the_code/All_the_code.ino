@@ -1,7 +1,7 @@
 // Código unificado general :)
 
 // BUTTON - Change from zero leveling (0) to inductive (1) to everything else (2)
-int button_counter = 4;
+int button_counter = -1;
 int button_pin = 10;
 int button_rst = 11;
 
@@ -198,6 +198,10 @@ void Inductive() {
         ind_avg_freq = ind_avg_freq * 60; // convert to rpm
 
         ind_freq = 0; // Reset frequency variable
+
+        // Print results
+        Serial.println("Average angular velocity:");
+        Serial.println(ind_avg_freq);
       }
     }
     delay(200); // Delay to avoid rapid measurements
@@ -210,6 +214,12 @@ void Humidity() {
   humid = DHT.getHumidity();
   amb_temp = DHT.getTemperature();
   delay(2000);
+
+  // Print results
+  Serial.println("Ambient humidity:");
+  Serial.println(humid);
+  Serial.println("Ambient temperature:");
+  Serial.println(amb_temp);
 }
 
 // All the measurements
@@ -405,7 +415,12 @@ void loop() {
   // Button state change
   if (digitalRead(button_pin) == 1) {
     button_counter += 1;
-    delay(7000); // 7 senconds to change button state
+    if (button_counter == 1) {
+      delay(7000); // 7 senconds to change button state - Zero leveling sucks
+    }
+    else {
+      delay(3000); // 2 seconds to change button state
+    }
   }
 
   // Button Reset
@@ -416,39 +431,40 @@ void loop() {
 
 
   // Run the actual codes
-  switch (button_counter) {
-    case 0:
-      Zero_Leveling();
-      break;
+  if (button_counter == 0) {
+    Zero_Leveling();
+  }
 
-    case 1:
-      Inductive();
-      break;
+  else {
+    switch (button_counter % 3) {
+      case 1:
+        Inductive();
+        break;
+      
+      case 2:
+        Humidity();
+        break;
+      
+      case 0:
+        // UNIFORM INTERVALS
+        millis_current = millis();
 
-    case 2:
-      Humidity();
-      break;
-
-    case 3:
-      // UNIFORM INTERVALS
-      millis_current = millis();
-
-      // Take new measurements only if inside the time interval
-      if (millis_current - millis_previous >= time_interval) {
-        millis_previous = millis_current;
-        All_Measurements();
-        
-        // Print results to csv - With filter for if ultrasonics turn off
-        if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
-          //Print_Results();
-          CSV_Results();
+        // Take new measurements only if inside the time interval
+        if (millis_current - millis_previous >= time_interval) {
+          millis_previous = millis_current;
+          All_Measurements();
+          
+          // Print results to csv - With filter for if ultrasonics turn off
+          if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
+            //Print_Results();
+            CSV_Results();
+          }
         }
-      }
-      break;
+        break;
 
-    default:
-      delay(1000); // Just chill for a bit
-      break;
+      default:
+        delay(1000); // Just chill for a bit
+        break;
+    }
   }
 }
- 
