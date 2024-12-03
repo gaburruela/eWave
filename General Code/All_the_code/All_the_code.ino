@@ -296,7 +296,7 @@ void Print_Results() {
   Serial.println(float(millis_current) / 1000); // Time in seconds
 
   // Accelerometer
-  Serial.println("Acceleration (m^2/s) x, y, z");
+  Serial.println("Acceleration (m/s^2) x, y, z");
   Serial.print(a.acceleration.x);
   Serial.print(",");
   Serial.print(a.acceleration.y);
