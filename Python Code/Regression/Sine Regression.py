@@ -26,6 +26,11 @@ csv_filename = csv_path + crank_pos + motor_freq + '.csv'
 
 
 data = pandas.read_csv(csv_filename)
+
+# Get time data
+x_data = np.array(data['Time (s)'].tolist())
+x_data = x_data - x_data[0] # Phaseshift to start measurements at zero
+
 # Get data from accelerometer
 accel_x = np.array(data['Accel_x (m2/s)'].tolist())
 accel_y = np.array(data['Accel_y (m2/s)'].tolist())
@@ -36,15 +41,15 @@ accel_total = np.sqrt(accel_x**2 + accel_y**2 + accel_z**2)
 
 # Graph acceleration data
 plt.subplot(211)
-plt.plot(accel_x, color='r', label='Acceleration x')
-plt.plot(accel_y, color='g', label='Acceleration y')
-plt.plot(accel_z, color='b', label='Acceleration z')
+plt.plot(x_data, accel_x, color='r', label='Acceleration x')
+plt.plot(x_data, accel_y, color='g', label='Acceleration y')
+plt.plot(x_data, accel_z, color='b', label='Acceleration z')
 plt.legend()
 plt.ylabel('Acceleration (m²/s)')
 plt.title('Wavemaker flap accelaration')
 
 plt.subplot(212)
-plt.plot(accel_total, 'c', label='Acceleration magnitude')
+plt.plot(x_data, accel_total, 'c', label='Acceleration magnitude')
 plt.legend()
 plt.xlabel('Time (s)')
 plt.ylabel('Acceleration (m²/s)')
@@ -53,16 +58,14 @@ plt.show()
 
 
 # Get data from ultrasonic sensors
-x_data = np.array(data['Time (s)'].tolist())
 y_data1 = np.array(data['Height 1 (mm)'].tolist())
 y_data2 = np.array(data['Height 2 (mm)'].tolist())
-
-x_data = x_data - x_data[0] # Phaseshift to start measurements at zero
 
 # Preliminary graphs to make initial guesses
 plt.subplot(211) # For initial guesses
 plt.plot(x_data, y_data1, color='m', label='No Bond')
 plt.ylabel('Height (mm)')
+plt.grid()
 plt.legend()
 plt.title('Heights for initial guesses')
 
@@ -70,6 +73,7 @@ plt.subplot(212) # For seeing trends in a lot more data
 plt.plot(x_data[0:200], y_data2[0:200], color='c', label='Bond')
 plt.xlabel('Time (s)')
 plt.ylabel('Height (mm)')
+plt.grid()
 plt.legend()
 
 plt.show()

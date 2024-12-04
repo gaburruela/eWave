@@ -7,8 +7,8 @@ port = 'COM10'  # COM9 para Andrés / COM10 para Daniel
 baudrate = 115200
 
 # Wave variables
-maxWaves = 400
-graph_maxWaves = 8
+max_waves = 400
+graph_max_waves = 8
 wave_counter = 0
 
 # Connect to serial port
@@ -83,7 +83,7 @@ with open(csv_filename, mode='w', newline='') as file:
 
                     # OBTAIN PEAK-PEAK MEASUREMENTS
                     # The current height value is data[9]
-                    height = data[9]
+                    height = float(data[9])
                     
                     # Not an empty array
                     if len(half_period) >= 1:
@@ -101,13 +101,19 @@ with open(csv_filename, mode='w', newline='') as file:
                                     pp.append(max_height - min_height)
 
                                 # Calculate new average and standard deviation
-                                avg = statistics.mean(pp)
-                                stdev = statistics.stdev(pp)
-
-                                print('Average: ', avg, ', Standard deviation: ', stdev)
+                                if len(pp) >= 2:
+                                    avg = statistics.mean(pp)
+                                    stdev = statistics.stdev(pp)
+                                    
+                                    print('Average: ', avg, ', Standard deviation: ', stdev)
 
                                 # Update wave counter
                                 wave_counter += 0.5
+                            print('\nHalf period: \n', half_period)
+                            half_period = []
+                    
+                    half_period.append(height)
+                else: print(line)
 
     except KeyboardInterrupt:
         print("Deteniendo la lectura de datos.")
