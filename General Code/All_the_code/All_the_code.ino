@@ -463,7 +463,7 @@ void loop() {
         break;
 
       default:
-        delay(1000); // Just chill for a bit
+        delay(100); // Just chill for a bit
         break;
     }
   }
