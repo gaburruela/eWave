@@ -65,22 +65,6 @@ avg = 0
 stdev = 0
 
 
-
-
-'''
-save in array all values
-calculate max or min at sign change
-depending on sign change value (-1 or +1) calculate max or min of array
-'''
-
-
-
-def min_max_height(prev_height, current_height):
-    if prev_height*current_height < 0:
-        
-
-
-
 # Abre el archivo CSV en modo de escritura
 with open(csv_filename, mode='w', newline='') as file:
     writer = csv.writer(file)
@@ -110,7 +94,7 @@ with open(csv_filename, mode='w', newline='') as file:
                             else:
                                 # Get new maximum or new minimum
                                 if half_period[-1] > 0: max_height = max(half_period)
-                                else half_height[-1]: min_height = min(half_period)
+                                else: min_height = min(half_period)
                                 
                                 # Calculate peak-peak
                                 if max_height != 0 and min_height != 0: # Both have been updated at least once
