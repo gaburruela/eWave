@@ -42,6 +42,7 @@ with open(csv_filename, mode='w', newline='') as file:
             if ser.in_waiting > 0:
                 # Lee una línea del puerto serie
                 line = ser.readline().decode('utf-8').strip()
+                print(line)
                 # Divide la línea en tiempo y temperatura
                 data = line.split(',')
                 if len(data) == 11:

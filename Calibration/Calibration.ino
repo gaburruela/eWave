@@ -12,20 +12,20 @@ float s2_distance_avg = 0;
 float s1_distance_calibrated = 0;
 float s2_distance_calibrated = 0;
 
-// Manual mapping No Bond -> NOT UPDATED
-float s1_min_Volt = 176;
-float s1_max_Volt = 887;
-float s1_min_Dist = 89;
-float s1_max_Dist = 983;
+// Manual mapping No Bond -> UPDATED
+float s1_min_Volt = 175;
+float s1_max_Volt = 881;
+float s1_min_Dist = 88.5;
+float s1_max_Dist = 975;
 
-// Manual mapping Bond -> NOT UPDATED
+// Manual mapping Bond -> UPDATED
 float s2_min_Volt = 176;
-float s2_max_Volt = 884;
-float s2_min_Dist = 89;
-float s2_max_Dist = 990;
+float s2_max_Volt = 882;
+float s2_min_Dist = 87;
+float s2_max_Dist = 967;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinMode(sensor1, INPUT);
   pinMode(sensor2, INPUT);
 }
@@ -38,7 +38,7 @@ void loop() {
     s1_voltage = analogRead(sensor1);
     s2_voltage = analogRead(sensor2);
     //Serial.print("voltaje sensor 1: ");
-    //Serial.print(s1_voltage);
+    //Serial.println(s1_voltage);
     //Serial.print(" voltaje sensor 2: ");
     //Serial.println(s2_voltage);
     s1_distance_avg = s1_distance_avg + (s1_voltage - s1_min_Volt) / (s1_max_Volt - s1_min_Volt) * (s1_max_Dist - s1_min_Dist) + s1_min_Dist; // Mapeo manual sensor 1 para tener decimales (regla de 3)
@@ -51,12 +51,12 @@ void loop() {
   s2_distance_avg = s2_distance_avg / num_med; // Saca el promedio
 
   // Calibración hecha en el excel: NotBond
-  //s1_distance_calibrated = (s1_distance_avg - 2.344994118) / 0.998825735 - 436;
-  Serial.println(s1_distance_avg);
+  //s1_distance_calibrated = (s1_distance_avg + 2.358681319) / 1.004824176;
+  //Serial.println(s1_distance_avg);
   //Serial.println(s1_distance_calibrated);
 
   // Calibración hecha en el excel: Bond
-  //s2_distance_calibrated = (s2_distance_avg + 2.293051471) / 1.020507353 - 435;
-  Serial.println(s2_distance_avg);
-  //Serial.println(s2_distance_calibrated);
+  s2_distance_calibrated = (s2_distance_avg - 1.260384615) / 0.994346154;
+  //Serial.println(s2_distance_avg);
+  Serial.println(s2_distance_calibrated);
 }
