@@ -63,8 +63,8 @@ time.sleep(2)
 
 
 
-# Interface 
-window = tk.Tk() # The main Tkinter window 
+# Interface
+window = tk.Tk() # The main Tkinter window
 window.title('Plotting in Tkinter')
 window.configure(bg="#80e0a7")
 
