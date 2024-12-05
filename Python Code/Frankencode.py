@@ -105,6 +105,7 @@ wavelength_stdev = 0
 
 # Wavelength thingies
 sensor_dist = 2.22
+crest_flag = True
 
 
 # Function time!
@@ -129,7 +130,6 @@ def Freq(wave_counter, time, prev_time, freq):
 
 
 def Wavelength(wavelength):
-    if crests = int(input('\nCrests between sensors: '))
     period = 1/noBond_freq[-1]
 
     # Add a full period per crest
@@ -323,6 +323,10 @@ with open(csv_filename, mode='w', newline='') as file:
                     Graph(time_graph, noBond_graph, Bond_graph)
                     '''
                     
+                elif line.find('Ambient humidity')!=-1 and crest_flag:
+                    crests = int(input('\nCrests between sensors: '))
+                    crest_flag = False
+                    print(line)
                 else: print(line)
 
     except KeyboardInterrupt:
@@ -334,9 +338,9 @@ ser.close()
 
 
 # Correct for wrong number of crests
-if input('Was the wavelength correct? (y/n): ') == 'n':
+if input('\nWas the wavelength correct? (y/n): ') == 'n':
     corr = int(input('How many crests do you need to add?: '))
-    for x in wavelength:
-        x = 1/(1/x + corr/2.2)
+    for i in range(len(wavelength)):
+        wavelength[i] = 1/(1/wavelength[i] + corr/2.2)
 
 wavelength_avg, wavelength_stdev = Stats(wavelength)
