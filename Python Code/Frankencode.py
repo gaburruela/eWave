@@ -8,8 +8,10 @@ import numpy as np
 import argparse
 import os
 import statistics
+import random
 
-#plt.ion()  # turning interactive mode on
+
+# plt.ion()  # turning interactive mode on
 
 port = 'COM10'  # COM9 para Andrés / COM10 para Daniel
 baudrate = 115200
@@ -27,15 +29,16 @@ noBond_graph = np.array([])
 
 
 # Wave variables
-max_waves = 10
+max_waves = 6
 
-# Connect to serial port
-try:
-    ser = serial.Serial(port, baudrate)
-    print(f"Conectado al puerto {port} a {baudrate} baudios.")
-except serial.SerialException as e:
-    print(f"No se pudo abrir el puerto {port}: {e}")
-    exit()
+# Comment out when using simulated data
+# # Connect to serial port
+# try:
+#     ser = serial.Serial(port, baudrate)
+#     print(f"Conectado al puerto {port} a {baudrate} baudios.")
+# except serial.SerialException as e:
+#     print(f"No se pudo abrir el puerto {port}: {e}")
+#     exit()
 
 # Nombre del archivo CSV
 crank_pos = str(input('Crank Position: '))
@@ -43,8 +46,9 @@ motor_noBond_freq = input('Motor Frequency (Hz): ')
 
 print('\nReady to start measurements!')
 
-csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
+# csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
 #csv_path = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\\' # Para Andrés
+csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
 
 csv_filename = csv_path + crank_pos + str(motor_noBond_freq) + '.csv'
 
@@ -132,6 +136,34 @@ def Graph(time, height1, height2):
     plt.pause(0.02)
 
 
+# at first zero crossing, set flag to true
+# ignore 1 zero corssing if odd number of zero crossings in between, 0 if even, then take time difference and divide it by period, or multiply by freq
+
+
+# # Function to generate random sine wave for testing wihtout tank ouputs
+
+# Simulated sine wave parameters
+data_points = 300 # Number of datapoints
+total_periods = 10 # Total of periods 
+simulated_time = np.linspace(0, 2*total_periods*np.pi, data_points)
+
+# simulated_sine = np.sin(simulated_time) + np.random.normal(scale=0.1, size=data_points)
+simulated_sine = np.sin(simulated_time)
+
+# Plot the graph to see the resulting sine wave
+
+plt.plot(np.linspace(0, 2*total_periods*np.pi, data_points), simulated_sine, marker = 'o')
+plt.show()
+
+
+time_diff = 0
+wavelength = []
+sensor_dist = 2220 # Distancia entre sensores en mm
+num_cruces_cero = 3
+
+# Variables to use simulated data
+sine_counter = 0
+sim_offset = 53 # Plays the part of the phase shift
 
 # Abre el archivo CSV en modo de escritura
 with open(csv_filename, mode='w', newline='') as file:
@@ -141,21 +173,30 @@ with open(csv_filename, mode='w', newline='') as file:
     
     try:
         while Bond_wave_counter < max_waves:
-            if ser.in_waiting > 0:
-                # Read serial port string
-                line = ser.readline().decode('utf-8').strip()
-                # Split the whole serial string into values
-                data = line.split(',')
+            if sine_counter + sim_offset <= len(simulated_sine): # Usar esta linea para usar datos simulados
+            # if ser.in_waiting > 0:
+                # # Read serial port string
+                # line = ser.readline().decode('utf-8').strip()
+                # # Split the whole serial string into values
+                # data = line.split(',')
 
                 # Right stage of Arduino code
-                if len(data) == 11:
-                    # Escribe los datos en el archivo CSV
-                    writer.writerow(data)
+                if sine_counter + sim_offset <= len(simulated_sine): # Usar esta linea para usar datos simulados
+                # if len(data) == 11:
 
-                    # Get serial data into variables
-                    time = float(data[0])
-                    noBond_height = float(data[9])
-                    Bond_height = float(data[10])
+                    # # Escribe los datos en el archivo CSV
+                    # writer.writerow(data)
+
+                    # # Get serial data into variables
+                    # time = float(data[0])
+                    # noBond_height = float(data[9])
+                    # Bond_height = float(data[10])
+
+                    # Get variables from simulated wave
+                    time = simulated_time[sine_counter]
+                    noBond_height = simulated_sine[sine_counter +3]
+                    Bond_height = simulated_sine[sine_counter + sim_offset]
+
 
                     # NO BOND
                     # Not an empty array
@@ -180,6 +221,13 @@ with open(csv_filename, mode='w', newline='') as file:
                                 if noBond_wave_counter % 1 == 0.5:
                                     Freq(noBond_wave_counter, time, noBond_prev_time, noBond_freq)
                                     noBond_prev_time = time
+
+                                    # Wavelength calculations
+                                    if num_cruces_cero % 2 == 1:
+                                        wavelength.append(sensor_dist/((time_diff+1/(noBond_freq[-1]*2))*noBond_freq[-1])) # calculates the phase shift and adds it to vector
+                                    
+                                    else:
+                                        wavelength.append(sensor_dist/((time_diff)*noBond_freq[-1]))
                                 
                                     if len(noBond_freq) >= 2:
                                         noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
@@ -217,13 +265,14 @@ with open(csv_filename, mode='w', newline='') as file:
                                     Freq(Bond_wave_counter, time, Bond_prev_time, Bond_freq)
                                     Bond_prev_time = time
                                     #print('Freq test: ', Bond_freq)
+                                else: # No Bond has had first crossing, calculates time diff for phase diff if at right point of wave at current cero crossing
+                                    time_diff = time - noBond_prev_time
                                 
                                 if len(Bond_freq) >= 2:
                                     Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)
                                     print('Bond Frequency:')
                                     print('Average: ', Bond_freq_avg, ', Standard deviation: ', Bond_freq_stdev)
                                 
-
                                 # Update period counter
                                 Bond_wave_counter += 0.5
 
@@ -231,6 +280,8 @@ with open(csv_filename, mode='w', newline='') as file:
                             Bond_half_period = []
 
                     Bond_half_period.append(Bond_height)
+
+                    sine_counter += 1
 
                     '''
                     # GRAPHING TIME
@@ -243,12 +294,13 @@ with open(csv_filename, mode='w', newline='') as file:
                     '''
                     
                 else: print(line)
+            print('wavelength measurements:' , wavelength)
 
     except KeyboardInterrupt:
         print("Deteniendo la lectura de datos.")
 
 
 # Cierra la conexión serie
-ser.close()
+# ser.close()
 
 
