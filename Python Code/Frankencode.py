@@ -32,13 +32,13 @@ noBond_graph = np.array([])
 max_waves = 10
 
 # Comment out when using simulated data
-# # Connect to serial port
-# try:
-#     ser = serial.Serial(port, baudrate)
-#     print(f"Conectado al puerto {port} a {baudrate} baudios.")
-# except serial.SerialException as e:
-#     print(f"No se pudo abrir el puerto {port}: {e}")
-#     exit()
+# Connect to serial port
+try:
+    ser = serial.Serial(port, baudrate)
+    print(f"Conectado al puerto {port} a {baudrate} baudios.")
+except serial.SerialException as e:
+    print(f"No se pudo abrir el puerto {port}: {e}")
+    exit()
 
 # Nombre del archivo CSV
 crank_pos = str(input('Crank Position: '))
@@ -78,6 +78,7 @@ Bond_min_height = 0
 noBond_prev_time = 0
 Bond_prev_time = 0
 # Wavelength
+sign_cross = 0 # Just care about the sign
 time_diff = 0
 
 # Store all parameters - Has no size cap
@@ -104,7 +105,6 @@ wavelength_stdev = 0
 
 # Wavelength thingies
 sensor_dist = 2.22
-#zero_crossings = int(input('\nZero crossings between sensors: '))
 
 
 # Function time!
@@ -129,10 +129,15 @@ def Freq(wave_counter, time, prev_time, freq):
 
 
 def Wavelength(wavelength):
+    if crests = int(input('\nCrests between sensors: '))
     period = 1/noBond_freq[-1]
 
-    # Take away half a period per zero crossing (with half a period offset)
-    percentage = time_diff/period + (zero_crossings - 1)/2
+    # Add a full period per crest
+    percentage = time_diff/period + (crests - 1)
+
+    # Make sure phase is in sync - if not take away half a period
+    if sign_cross * Bond_height < 0:
+        percentage -= 0.5
     
     wavelength.append(sensor_dist/percentage)
 
@@ -159,10 +164,8 @@ def Graph(time, height1, height2):
     plt.pause(0.02)
 
 
-# at first zero crossing, set flag to true
-# ignore 1 zero corssing if odd number of zero crossings in between, 0 if even, then take time difference and divide it by period, or multiply by freq
-
-
+# Simulated sine stuff
+'''
 # # Function to generate random sine wave for testing wihtout tank ouputs
 
 # Simulated sine wave parameters
@@ -184,7 +187,7 @@ plt.plot(simulated_time, np.zeros(data_points), 'm')
 plt.show()
 
 zero_crossings = int(input('\nZero crossings between sensors: '))
-
+'''
 
 # Abre el archivo CSV en modo de escritura
 with open(csv_filename, mode='w', newline='') as file:
@@ -194,29 +197,29 @@ with open(csv_filename, mode='w', newline='') as file:
     
     try:
         while Bond_wave_counter < max_waves:
-            if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
-            # if ser.in_waiting > 0:
-                # # Read serial port string
-                # line = ser.readline().decode('utf-8').strip()
-                # # Split the whole serial string into values
-                # data = line.split(',')
+            #if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
+            if ser.in_waiting > 0:
+                # Read serial port string
+                line = ser.readline().decode('utf-8').strip()
+                # Split the whole serial string into values
+                data = line.split(',')
 
                 # Right stage of Arduino code
-                if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
-                # if len(data) == 11:
+                #if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
+                if len(data) == 11:
 
-                    # # Escribe los datos en el archivo CSV
-                    # writer.writerow(data)
+                    # Escribe los datos en el archivo CSV
+                    writer.writerow(data)
 
-                    # # Get serial data into variables
-                    # time = float(data[0])
-                    # noBond_height = float(data[9])
-                    # Bond_height = float(data[10])
+                    # Get serial data into variables
+                    time = float(data[0])
+                    noBond_height = float(data[9])
+                    Bond_height = float(data[10])
 
                     # Get variables from simulated wave
-                    time = simulated_time[sine_counter]
-                    Bond_height = simulated_sine[sine_counter]
-                    noBond_height = simulated_sine[sine_counter + sim_offset]
+                    #time = simulated_time[sine_counter]
+                    #Bond_height = simulated_sine[sine_counter]
+                    #noBond_height = simulated_sine[sine_counter + sim_offset]
 
 
                     # NO BOND
@@ -228,6 +231,7 @@ with open(csv_filename, mode='w', newline='') as file:
                             if noBond_first_wave == True:
                                 noBond_first_wave = False
                                 noBond_prev_time = time
+                                sign_cross = noBond_height
                             else:
                                 print('No Bond Wave counter:', noBond_wave_counter)
                                 # Peak-Peak
@@ -242,6 +246,7 @@ with open(csv_filename, mode='w', newline='') as file:
                                 if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
                                     Freq(noBond_wave_counter, time, noBond_prev_time, noBond_freq)
                                     noBond_prev_time = time
+                                    sign_cross = noBond_height
 
                                     if len(noBond_freq) >= 2:
                                         noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
@@ -306,7 +311,7 @@ with open(csv_filename, mode='w', newline='') as file:
 
                     Bond_half_period.append(Bond_height)
 
-                    sine_counter += 1
+                    #sine_counter += 1
 
                     '''
                     # GRAPHING TIME
@@ -325,4 +330,13 @@ with open(csv_filename, mode='w', newline='') as file:
 
 
 # Cierra la conexión serie
-# ser.close()
+ser.close()
+
+
+# Correct for wrong number of crests
+if input('Was the wavelength correct? (y/n): ') == 'n':
+    corr = int(input('How many crests do you need to add?: '))
+    for x in wavelength:
+        x = 1/(1/x + corr/2.2)
+
+wavelength_avg, wavelength_stdev = Stats(wavelength)
