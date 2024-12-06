@@ -18,7 +18,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 port = 'COM10'  # COM9 para Andrés / COM10 para Daniel
 baudrate = 115200
 
-
+'''
 # Comment out when using simulated data
 # Connect to serial port
 try:
@@ -27,10 +27,10 @@ try:
 except serial.SerialException as e:
     print(f"No se pudo abrir el puerto {port}: {e}")
     exit()
-
+'''
 # Nombre del archivo CSV
 crank_pos = str(input('Crank Position: '))
-motor_noBond_freq = input('Motor Frequency (Hz): ')
+motor_freq = input('Motor Frequency (Hz): ')
 
 print('\nReady to start measurements!')
 
@@ -38,7 +38,7 @@ csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Data
 #csv_path = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\\' # Para Andrés
 #csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
 
-csv_filename = csv_path + crank_pos + str(motor_noBond_freq) + '.csv'
+csv_filename = csv_path + crank_pos + str(motor_freq) + '.csv'
 
 # Espera unos segundos para asegurarse de que la conexión esté establecida
 time.sleep(2)
@@ -46,20 +46,22 @@ time.sleep(2)
 
 # GENERAL VARIABLES
 
-# Graph variables
-max_measurements = 100
+# Wave variables
+max_waves = 10
 graph_max = 20
+
+# Graph variables
 time_csv = []
 Bond_measurements = []
-NotBond_measurements = []
+noBond_measurements = []
+# Useless variables
 AmbTemp_value = 0
 WaterTemp_value = 0
 Humidity_value = 0
 MotorTemp_value = 0
 AngularVelocity_value = 0
 
-# Wave variables
-max_waves = 10
+
 
 # Variables for getting wave parameters
 
@@ -149,18 +151,57 @@ Bond_canvas.get_tk_widget().pack()
 Bond_canvas.get_tk_widget().place(x=20, y=20)
 
 # Create graph and axis Not Bond
-NotBond_graph, NotBond_axis = plt.subplots(figsize = (11, 4.1))
-NotBond_axis.set_xlabel('Time (s)')
-NotBond_axis.set_ylabel('Amplitud (mm)')
-plt.close(NotBond_graph)
-NotBond_line, = NotBond_axis.plot([],[])
+noBond_graph, noBond_axis = plt.subplots(figsize = (11, 4.1))
+noBond_axis.set_xlabel('Time (s)')
+noBond_axis.set_ylabel('Amplitud (mm)')
+plt.close(noBond_graph)
+noBond_line, = noBond_axis.plot([],[])
 
 # Insert the graph into tkinter window
-NotBond_canvas = FigureCanvasTkAgg(NotBond_graph, master = window)
-NotBond_canvas.get_tk_widget().pack()
+noBond_canvas = FigureCanvasTkAgg(noBond_graph, master = window)
+noBond_canvas.get_tk_widget().pack()
 
 # Place the graph
-NotBond_canvas.get_tk_widget().place(x=20, y=429)
+noBond_canvas.get_tk_widget().place(x=20, y=429)
+
+
+# CREATE LABELS AND TEXT BOXES
+
+# Environment condition box
+T = tk.Text(window, height = 30, width = 45)
+T.pack()
+T.place(relx = 0.984, rely = 0.05, anchor = 'ne')
+
+# Environment conditions
+title = tk.Label(window, text = "Condiciones Ambientales")
+title.config(font =("Courier", 14))
+title.pack()
+title.place(relx = 0.95, rely = 0.01, anchor = 'ne')
+
+AmbTemp_valuetext = tk.Label(window)
+AmbTemp_valuetext.config(font =("Courier", 12))
+AmbTemp_valuetext.pack()
+AmbTemp_valuetext.place(relx = 0.981, rely = 0.059, anchor = 'ne')
+
+WaterTemp_valuetext = tk.Label(window)
+WaterTemp_valuetext.config(font = ("Courier", 12))
+WaterTemp_valuetext.pack()
+WaterTemp_valuetext.place(relx = 0.971, rely = 0.097, anchor = 'ne')
+
+Humidity_valuetext = tk.Label(window, text = "Humedad: 100 %")
+Humidity_valuetext.config(font =("Courier", 12))
+Humidity_valuetext.pack()
+Humidity_valuetext.place(relx = 0.92, rely = 0.135, anchor = 'ne')
+
+MotorTemp_valuetext = tk.Label(window)
+MotorTemp_valuetext.config(font =("Courier", 12))
+MotorTemp_valuetext.pack()
+MotorTemp_valuetext.place(relx = 0.96, rely = 0.173, anchor = 'ne')
+
+AngularVelocity_valuetext = tk.Label(window, text = 'Velocidad angular: ')
+AngularVelocity_valuetext.config(font =("Courier", 12))
+AngularVelocity_valuetext.pack()
+AngularVelocity_valuetext.place(relx = 0.94, rely = 0.211, anchor = 'ne')
 
 
 
@@ -185,7 +226,7 @@ def Freq(wave_counter, time, prev_time, freq):
     freq.append(1/(time - prev_time))
 
 
-def Wavelength(wavelength):
+def Wavelength(wavelength, Bond_height):
     period = 1/noBond_freq[-1]
 
     # Add a full period per crest
@@ -207,33 +248,43 @@ def Stats(var):
 
 
 # Simulated sine stuff
-# Function to generate random sine wave for testing wihtout tank ouputs
-def Simulated_sine():
-    # Simulated sine wave parameters
-    data_points = 300 # Number of datapoints
-    total_periods = 10 # Total of periods 
-    simulated_time = np.linspace(0, 2*total_periods*np.pi, data_points)
 
-    # simulated_sine = np.sin(simulated_time) + np.random.normal(scale=0.1, size=data_points)
-    simulated_sine = np.sin(simulated_time)
+# Generate random sine wave for testing wihtout tank ouputs
+# Simulated sine wave parameters
+data_points = 300 # Number of datapoints
+total_periods = 10 # Total of periods 
+simulated_time = np.linspace(0, 2*total_periods*np.pi, data_points)
 
-    # Variables to use simulated data
-    sine_counter = 0
-    sim_offset = 25 # Plays the part of the phase shift
+# simulated_sine = np.sin(simulated_time) + np.random.normal(scale=0.1, size=data_points)
+simulated_sine = np.sin(simulated_time)
 
-    # Plot the graph to see the resulting sine wave
-    plt.plot(simulated_time, simulated_sine)
-    plt.plot(simulated_time[sim_offset], simulated_sine[sim_offset], 'or')
-    plt.plot(simulated_time, np.zeros(data_points), 'm')
-    plt.show()
+# Variables to use simulated data
+sine_counter = 0
+sim_offset = 25 # Plays the part of the phase shift
 
-    zero_crossings = int(input('\nZero crossings between sensors: '))
+# Plot the graph to see the resulting sine wave
+plt.plot(simulated_time, simulated_sine)
+plt.plot(simulated_time[sim_offset], simulated_sine[sim_offset], 'or')
+plt.plot(simulated_time, np.zeros(data_points), 'm')
+plt.show()
+
+crests = int(input('\nCrests between sensors: '))
+data = [0,1,2,3,4,5,6,7,8]
 
 
 # ACTUAL CODE
 
-def update_graphs():
-    global time_csv, Bond_measurements, Bond_line, NotBond_measurements, NotBond_line, WaterTemp_value
+def Update_graphs():
+    global time_csv, Bond_measurements, Bond_line, noBond_measurements, noBond_line
+    global noBond_first_wave, Bond_first_wave
+    global noBond_half_period, noBond_wave_counter, Bond_half_period, Bond_wave_counter
+    global noBond_max_height, noBond_min_height, Bond_max_height, Bond_min_height
+    global noBond_prev_time, Bond_prev_time, sign_cross, time_diff
+    global noBond_pp, Bond_pp, noBond_freq, Bond_freq, wavelength
+    global noBond_pp_avg, noBond_pp_stdev, Bond_pp_avg, Bond_pp_stdev
+    global noBond_freq_avg, noBond_freq_stdev, Bond_freq_avg, Bond_freq_stdev, wavelength_avg, wavelength_stdev, crest_flag
+    global sine_counter
+    
     # Abre el archivo CSV en modo de escritura
     with open(csv_filename, mode='w', newline='') as file:
         writer = csv.writer(file)
@@ -242,28 +293,33 @@ def update_graphs():
         
         try:
             while Bond_wave_counter < max_waves:
-                #if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
-                if ser.in_waiting > 0:
+                if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
+                #if ser.in_waiting > 0:
                     # Read serial port string
-                    line = ser.readline().decode('utf-8').strip()
+                    #line = ser.readline().decode('utf-8').strip()
                     # Split the whole serial string into values
-                    data = line.split(',')
+                    #data = line.split(',')
 
                     # Right stage of Arduino code
-                    #if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
-                    if len(data) == 11:
-
+                    if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
+                    #if len(data) == 11:
+                        '''
                         # Escribe los datos en el archivo CSV
                         writer.writerow(data)
-
+                        
                         # Get serial data into variables
                         time = float(data[0])
                         noBond_height = float(data[9])
                         Bond_height = float(data[10])
+                        '''
+
+                        time = simulated_time[sine_counter]
+                        Bond_height = simulated_sine[sine_counter]
+                        noBond_height = simulated_sine[sine_counter + sim_offset]
                         
                         # Update tkinter window
                         Bond_measurements.append(Bond_height)
-                        NotBond_measurements.append(noBond_height)
+                        noBond_measurements.append(noBond_height)
                         time_csv.append(time)
 
                         AmbTemp_value = (float(data[6]))
@@ -313,7 +369,7 @@ def update_graphs():
                                             print('Average: ', noBond_freq_avg, ', Standard deviation: ', noBond_freq_stdev)
 
                                         # Wavelength calculations
-                                        Wavelength(wavelength)
+                                        Wavelength(wavelength, Bond_height)
                                         print('Wavelength:' , wavelength)
 
                                         if len(wavelength) >= 2:
@@ -369,37 +425,69 @@ def update_graphs():
                                 Bond_half_period = []
 
                         Bond_half_period.append(Bond_height)
+                        sine_counter += 1
 
-                        #sine_counter += 1
+                        # START GRAPH AND INTERFACE
 
-                        '''
-                        # GRAPHING TIME
-                        time_graph = np.append(time_graph, time)
-                        noBond_graph = np.append(noBond_graph, noBond_height)
-                        Bond_graph = np.append(Bond_graph, Bond_height)
+                        if len(Bond_measurements) % 3 == 0:
+                            Bond_line.set_xdata(time_csv)
+                            Bond_line.set_ydata(Bond_measurements)
+                            noBond_line.set_xdata(time_csv)
+                            noBond_line.set_ydata(noBond_measurements)
 
-                        # Calling graphing function - Only graphs Bond for now
-                        Graph(time_graph, noBond_graph, Bond_graph)
-                        '''
-                        
+                            Bond_axis.relim()
+                            Bond_axis.autoscale_view()
+                            Bond_canvas.draw()
+                            Bond_canvas.flush_events() # Update data
+
+                            noBond_axis.relim()
+                            noBond_axis.autoscale_view()
+                            noBond_canvas.draw()
+                            noBond_canvas.flush_events() 
+
+                            # Update pending tasks
+                            window.update_idletasks()
+                            window.update()
+
+                            if len(time_csv)>=graph_max:
+                                Bond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
+                                noBond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
+                    '''
                     elif line.find('Ambient humidity')!=-1 and crest_flag:
                         crests = int(input('\nCrests between sensors: '))
                         crest_flag = False
                         print(line)
                     else: print(line)
+                    '''
 
         except KeyboardInterrupt:
             print("Deteniendo la lectura de datos.")
+            
+        #ser.close()
+        # Correct for wrong number of crests
+        if input('\nWas the wavelength correct? (y/n): ') == 'n':
+            corr = int(input('How many crests do you need to add?: '))
+            for i in range(len(wavelength)):
+                wavelength[i] = 1/(1/wavelength[i] + corr/2.2)
+
+            wavelength_avg, wavelength_stdev = Stats(wavelength)
+
+    # Save results to csv file
+    if (input('\nSave data? (y/n): ') == 'y'):
+        results_file = open(csv_path + 'Results.csv', mode='a')
+        # Name of the test
+        results_file.write('\n' + crank_pos + ',' + motor_freq + ',')
+        # Add the results
+        results_file.write(str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
+        results_file.write(str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
+        results_file.write(str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
+        results_file.write(str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
+        results_file.write(str(wavelength_avg) + ',' + str(wavelength_stdev))
+        results_file.close()
 
 
-# Cierra la conexión serie
-ser.close()
 
 
-# Correct for wrong number of crests
-if input('\nWas the wavelength correct? (y/n): ') == 'n':
-    corr = int(input('How many crests do you need to add?: '))
-    for i in range(len(wavelength)):
-        wavelength[i] = 1/(1/wavelength[i] + corr/2.2)
-
-wavelength_avg, wavelength_stdev = Stats(wavelength)
+# RUN THE GUI
+window.after(0, Update_graphs)
+window.mainloop()
