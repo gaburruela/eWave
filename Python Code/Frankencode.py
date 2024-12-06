@@ -18,7 +18,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 port = 'COM10'  # COM9 para Andrés / COM10 para Daniel
 baudrate = 115200
 
-'''
+
 # Comment out when using simulated data
 # Connect to serial port
 try:
@@ -27,7 +27,7 @@ try:
 except serial.SerialException as e:
     print(f"No se pudo abrir el puerto {port}: {e}")
     exit()
-'''
+
 # Nombre del archivo CSV
 crank_pos = str(input('Crank Position: '))
 motor_freq = input('Motor Frequency (Hz): ')
@@ -248,7 +248,7 @@ def Stats(var):
 
 
 # Simulated sine stuff
-
+'''
 # Generate random sine wave for testing wihtout tank ouputs
 # Simulated sine wave parameters
 data_points = 300 # Number of datapoints
@@ -270,7 +270,7 @@ plt.show()
 
 crests = int(input('\nCrests between sensors: '))
 data = [0,1,2,3,4,5,6,7,8]
-
+'''
 
 # ACTUAL CODE
 
@@ -293,35 +293,37 @@ def Update_graphs():
         
         try:
             while Bond_wave_counter < max_waves:
-                if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
-                #if ser.in_waiting > 0:
+                #if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
+                if ser.in_waiting > 0:
                     # Read serial port string
-                    #line = ser.readline().decode('utf-8').strip()
+                    line = ser.readline().decode('utf-8').strip()
                     # Split the whole serial string into values
-                    #data = line.split(',')
+                    data = line.split(',')
 
                     # Right stage of Arduino code
-                    if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
-                    #if len(data) == 11:
-                        '''
+                    #if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
+                    if len(data) == 11:
+                        
                         # Escribe los datos en el archivo CSV
                         writer.writerow(data)
+
+                        # Simutaled stuff
+                        '''
+                        time = simulated_time[sine_counter]
+                        Bond_height = simulated_sine[sine_counter]
+                        noBond_height = simulated_sine[sine_counter + sim_offset]
+                        '''
                         
                         # Get serial data into variables
                         time = float(data[0])
                         noBond_height = float(data[9])
                         Bond_height = float(data[10])
-                        '''
-
-                        time = simulated_time[sine_counter]
-                        Bond_height = simulated_sine[sine_counter]
-                        noBond_height = simulated_sine[sine_counter + sim_offset]
                         
                         # Update tkinter window
                         Bond_measurements.append(Bond_height)
                         noBond_measurements.append(noBond_height)
                         time_csv.append(time)
-
+                        
                         AmbTemp_value = (float(data[6]))
                         AmbTemp_valuetext.config(text = f"Temperatura del ambiente (°C): {AmbTemp_value:.2f}")
                         
@@ -425,7 +427,7 @@ def Update_graphs():
                                 Bond_half_period = []
 
                         Bond_half_period.append(Bond_height)
-                        sine_counter += 1
+                        #sine_counter += 1 # Only for simulations
 
                         # START GRAPH AND INTERFACE
 
@@ -452,18 +454,18 @@ def Update_graphs():
                             if len(time_csv)>=graph_max:
                                 Bond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
                                 noBond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
-                    '''
+                    
                     elif line.find('Ambient humidity')!=-1 and crest_flag:
                         crests = int(input('\nCrests between sensors: '))
                         crest_flag = False
                         print(line)
                     else: print(line)
-                    '''
+                    
 
         except KeyboardInterrupt:
             print("Deteniendo la lectura de datos.")
             
-        #ser.close()
+        ser.close()
         # Correct for wrong number of crests
         if input('\nWas the wavelength correct? (y/n): ') == 'n':
             corr = int(input('How many crests do you need to add?: '))
