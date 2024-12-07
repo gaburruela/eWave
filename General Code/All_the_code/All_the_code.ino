@@ -120,11 +120,11 @@ const float s2_max_Dist = 967;
 
 // Parámetros de calibración - Revisar Excel
 // Not Bond
-const float s1_slope = 1.004824176;
-const float s1_intercept = -2.358681319;
+const float s1_slope = 0.997678571;
+const float s1_intercept = -0.683571429;
 // Bond
-const float s2_slope = 0.994346154;
-const float s2_intercept = 1.260384615;
+const float s2_slope = 0.991791209;
+const float s2_intercept = -0.954175824;
 
 
 // EXTERNAL FUNCTIONS
@@ -142,9 +142,12 @@ float mapping(float signal, int sensor) {
 
 // Zero-leveling
 void Zero_Leveling() {
+  s1_zero_lvl = 0; // Hacer reset por favor!
+  s2_zero_lvl = 0;
   for (int i = 0; i < med_zero; i++) {
     s1_voltage = analogRead(s1);
     s2_voltage = analogRead(s2);
+    //Serial.println(s2_voltage);
     s1_zero_lvl += mapping(s1_voltage, 1);
     s2_zero_lvl += mapping(s2_voltage, 2);
     delay(50);
@@ -155,8 +158,8 @@ void Zero_Leveling() {
   s2_zero_lvl /= med_zero;
 
   // Calibrate sensors
-  s1_zero_lvl = (s1_zero_lvl - s1_intercept) / s1_slope;
-  s2_zero_lvl = (s2_zero_lvl - s2_intercept) / s2_slope;
+  s1_zero_lvl = (s1_zero_lvl - s1_intercept) / s1_slope - 3;
+  s2_zero_lvl = (s2_zero_lvl - s2_intercept) / s2_slope - 3;
 
   Serial.println("Zero levels:");
   Serial.println(s1_zero_lvl);
@@ -278,14 +281,10 @@ void All_Measurements() {
   s2_voltage = analogRead(s2);
   s1_distance_avg += mapping(s1_voltage, 1);
   s2_distance_avg += mapping(s2_voltage, 2);
-  
-  // Get averages
-  s1_distance_avg = s1_distance_avg / num_med;
-  s2_distance_avg = s2_distance_avg / num_med;
 
   // Calibration
-  s1_distance_calibrated = (s1_distance_avg - s1_intercept) / s1_slope;
-  s2_distance_calibrated = (s2_distance_avg - s2_intercept) / s2_slope;
+  s1_distance_calibrated = (s1_distance_avg - s1_intercept) / s1_slope - 3;
+  s2_distance_calibrated = (s2_distance_avg - s2_intercept) / s2_slope - 3;
 }
 
 // Print results

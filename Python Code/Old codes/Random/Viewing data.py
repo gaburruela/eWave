@@ -7,9 +7,9 @@ from scipy.optimize import curve_fit
 
 # DATA READING AND PREPROCESSING
 # Read the actual data from csv file
-##csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
+csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
 #csv_path = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\\' # Para Andrés
-csv_path = r'C:\Users\garab\eWave Repo\eWave\Datasets\\' # Para Gabriel
+#csv_path = r'C:\Users\garab\eWave Repo\eWave\Datasets\\' # Para Gabriel
 
 # Make sure to change for each test
 print('\nFile name information:')
@@ -37,7 +37,7 @@ plt.title('Heights for initial guesses')
 
 plt.subplot(212) # For seeing trends in a lot more data
 # plt.plot(x_data[0:200], y_data2[0:200], marker = 'o', color='c', label='Bond')
-plt.plot(x_data[0:200], y_data2[0:200], color='c', label='Bond')
+plt.plot(x_data, y_data2, color='c', label='Bond')
 plt.xlabel('Time (s)')
 plt.ylabel('Height (mm)')
 plt.legend()
