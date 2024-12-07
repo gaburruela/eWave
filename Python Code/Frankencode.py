@@ -90,7 +90,8 @@ Bond_min_height = 0
 noBond_prev_time = 0
 Bond_prev_time = 0
 # Wavelength
-sign_cross = 0 # Just care about the sign (for No Bond)
+noBond_sign_cross = 0 # Just care about the sign
+Bond_sign_cross = 0 # Just care about the sign
 time_diff = 0
 
 # Store all parameters - Has no size cap
@@ -140,7 +141,7 @@ image_label.place(relx = 0.983, rely = 0.92, anchor = 'se', x=-20, y=-20)
 
 
 plt.ion() # turning interactive mode on
-
+x=0
 
 # Create graph and axis Not Bond
 noBond_graph, noBond_axis = plt.subplots(figsize = (11, 4.1))
@@ -288,17 +289,17 @@ def Freq(wave_counter, ttime, prev_time, freq):
         freq.append(1/(ttime - prev_time))
 
 
-def Wavelength(wavelength, Bond_height):
+def Wavelength(wavelength):
     period = 1/noBond_freq[-1]
 
     # Add a full period per crest
     percentage = time_diff/period + (crests - 1)
 
     # Make sure phase is in sync - if not take away half a period
-    if sign_cross * Bond_height < 0:
+    if noBond_sign_cross * Bond_sign_cross < 0:
         percentage -= 0.5
 
-    if time_diff != 0:
+    if abs(percentage) > 0.001:
         wavelength.append(sensor_dist/percentage)
 
 
@@ -342,7 +343,7 @@ def Update_graphs():
     global noBond_first_wave, Bond_first_wave, time_start_flag, noBond_anti_ripple, Bond_anti_ripple
     global noBond_half_period, noBond_wave_counter, Bond_half_period, Bond_wave_counter
     global noBond_max_height, noBond_min_height, Bond_max_height, Bond_min_height
-    global noBond_prev_time, Bond_prev_time, sign_cross, time_diff
+    global noBond_prev_time, Bond_prev_time, noBond_sign_cross, Bond_sign_cross, time_diff
     global noBond_pp, Bond_pp, noBond_freq, Bond_freq, wavelength
     global noBond_pp_avg, noBond_pp_stdev, Bond_pp_avg, Bond_pp_stdev
     global noBond_freq_avg, noBond_freq_stdev, Bond_freq_avg, Bond_freq_stdev, wavelength_avg, wavelength_stdev, crest_flag, crests
@@ -425,7 +426,7 @@ def Update_graphs():
                         # Not an empty array
                         if len(noBond_half_period) >= 1:
                             if noBond_anti_ripple != 0:
-                                if noBond_anti_ripple > 5:
+                                if noBond_anti_ripple > 2:
                                     noBond_anti_ripple = 0
                                 else:
                                     noBond_anti_ripple += 1
@@ -437,7 +438,7 @@ def Update_graphs():
                                 if noBond_first_wave == True:
                                     noBond_first_wave = False
                                     noBond_prev_time = ttime
-                                    sign_cross = noBond_height
+                                    noBond_sign_cross = noBond_height
                                 else:
                                     #print('No Bond Wave counter:', noBond_wave_counter)
                                     # Peak-Peak
@@ -452,7 +453,7 @@ def Update_graphs():
                                     if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
                                         Freq(noBond_wave_counter, ttime, noBond_prev_time, noBond_freq)
                                         noBond_prev_time = ttime
-                                        sign_cross = noBond_height
+                                        noBond_sign_cross = noBond_height
 
                                         if len(noBond_freq) >= 2:
                                             noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
@@ -460,7 +461,7 @@ def Update_graphs():
                                             #print('Average: ', noBond_freq_avg, ', Standard deviation: ', noBond_freq_stdev)
 
                                         # Wavelength calculations
-                                        Wavelength(wavelength, Bond_height)
+                                        Wavelength(wavelength)
                                         #print('Wavelength:' , wavelength)
 
                                         if len(wavelength) >= 2:
@@ -479,7 +480,7 @@ def Update_graphs():
                         # Not an empty array
                         if len(Bond_half_period) >= 1:
                             if Bond_anti_ripple != 0:
-                                if Bond_anti_ripple > 5:
+                                if Bond_anti_ripple > 2:
                                     Bond_anti_ripple = 0
                                 else:
                                     Bond_anti_ripple += 1
@@ -488,7 +489,7 @@ def Update_graphs():
                             if Bond_half_period[-1] * Bond_height < 0 and Bond_anti_ripple == 0:
                                 Bond_anti_ripple = 1
                                 # Ignore first wave
-                                if Bond_first_wave == True:
+                                if Bond_first_wave == True and noBond_first_wave == False:
                                     Bond_first_wave = False
                                     Bond_prev_time = ttime
                                 else:
@@ -510,6 +511,7 @@ def Update_graphs():
                                     # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
                                     else:
                                         time_diff = ttime - noBond_prev_time
+                                        Bond_sign_cross = Bond_height
                                     
                                     if len(Bond_freq) >= 2:
                                         Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)

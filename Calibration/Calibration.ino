@@ -58,11 +58,11 @@ void loop() {
 
   // Calibración hecha en el excel: NotBond
   s1_distance_calibrated = (s1_distance_avg - s1_intercept) / s1_slope;
-  //Serial.println(s1_distance_avg);
-  Serial.println(s1_distance_calibrated);
+  Serial.println(s1_distance_avg);
+  //Serial.println(s1_distance_calibrated);
 
   // Calibración hecha en el excel: Bond
   s2_distance_calibrated = (s2_distance_avg - s2_intercept) / s2_slope;
-  //Serial.println(s2_distance_avg);
+  Serial.println(s2_distance_avg);
   //Serial.println(s2_distance_calibrated);
 }
