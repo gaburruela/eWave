@@ -1,6 +1,6 @@
 // Código unificado general :)
 
-// BUTTON - Change from zero leveling (0) to inductive (1) to everything else (2)
+// BUTTON - Change from zero leveling (0) to inductive (1) to humidity (2) to everything else (3)
 int button_counter = -1;
 int button_pin = 10;
 int button_rst = 11;
@@ -83,13 +83,12 @@ float B_M = 3800; // [K]
 
 // ULTRASONICS UB1000
 // General variables
-const int num_med = 1; // average
 const int med_zero = 100; // zero-leveling
 
 // Time variables [ms]
 unsigned long millis_previous = 0;
 unsigned long millis_current;
-const long time_interval = 40; // Around 40
+const long time_interval = 125; // Around 125
 
 // Define sensor pins
 const int s1 = A3; // Not Bond
@@ -97,12 +96,12 @@ const int s2 = A2; // Bond
 
 // Sensor 1 variables
 float s1_voltage;
-float s1_distance_avg = 0;
+float s1_distance = 0;
 float s1_distance_calibrated = 0;
 float s1_zero_lvl = 0;
 // Sensor 2 variables
 float s2_voltage;
-float s2_distance_avg = 0;
+float s2_distance = 0;
 float s2_distance_calibrated = 0;
 float s2_zero_lvl = 0;
 
@@ -158,8 +157,8 @@ void Zero_Leveling() {
   s2_zero_lvl /= med_zero;
 
   // Calibrate sensors
-  s1_zero_lvl = (s1_zero_lvl - s1_intercept) / s1_slope - 3;
-  s2_zero_lvl = (s2_zero_lvl - s2_intercept) / s2_slope - 3;
+  //s1_zero_lvl = (s1_zero_lvl - s1_intercept) / s1_slope;
+  //s2_zero_lvl = (s2_zero_lvl - s2_intercept) / s2_slope;
 
   Serial.println("Zero levels:");
   Serial.println(s1_zero_lvl);
@@ -274,17 +273,16 @@ void All_Measurements() {
 
 
   // ULTRASONICS
-  s1_distance_avg = 0;
-  s2_distance_avg = 0;
-
   s1_voltage = analogRead(s1);
   s2_voltage = analogRead(s2);
-  s1_distance_avg += mapping(s1_voltage, 1);
-  s2_distance_avg += mapping(s2_voltage, 2);
+  s1_distance = mapping(s1_voltage, 1);
+  s2_distance = mapping(s2_voltage, 2);
 
   // Calibration
-  s1_distance_calibrated = (s1_distance_avg - s1_intercept) / s1_slope - 3;
-  s2_distance_calibrated = (s2_distance_avg - s2_intercept) / s2_slope - 3;
+  //s1_distance_calibrated = (s1_distance - s1_intercept) / s1_slope;
+  //s2_distance_calibrated = (s2_distance - s2_intercept) / s2_slope;
+  s1_distance_calibrated = s1_distance;
+  s2_distance_calibrated = s2_distance;
 }
 
 // Print results
@@ -435,35 +433,40 @@ void loop() {
   }
 
   else {
-    switch (button_counter % 3) {
-      case 1:
-        Inductive();
-        break;
-      
-      case 2:
-        Humidity();
-        break;
-      
-      case 0:
-        // UNIFORM INTERVALS
-        millis_current = millis();
+    if (button_counter == -1) {
+      delay(100); // Just chill for a bit
+    }
+    else {
+      switch (button_counter % 3) {
+        case 1:
+          Inductive();
+          break;
+        
+        case 2:
+          Humidity();
+          break;
+        
+        case 0:
+          // UNIFORM INTERVALS
+          millis_current = millis();
 
-        // Take new measurements only if inside the time interval
-        if (millis_current - millis_previous >= time_interval) {
-          millis_previous = millis_current;
-          All_Measurements();
-          
-          // Print results to csv - With filter for if ultrasonics turn off
-          if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
-            //Print_Results();
-            CSV_Results();
+          // Take new measurements only if inside the time interval
+          if (millis_current - millis_previous >= time_interval) {
+            millis_previous = millis_current;
+            All_Measurements();
+            
+            // Print results to csv - With filter for if ultrasonics turn off
+            if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
+              //Print_Results();
+              CSV_Results();
+            }
           }
-        }
-        break;
+          break;
 
-      default:
-        delay(100); // Just chill for a bit
-        break;
+        default:
+          delay(100); // Just chill for a bit
+          break;
+      }
     }
   }
 }
