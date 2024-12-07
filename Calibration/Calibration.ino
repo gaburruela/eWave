@@ -24,6 +24,12 @@ float s2_max_Volt = 882;
 float s2_min_Dist = 87;
 float s2_max_Dist = 967;
 
+float s1_slope = 0.997678571;
+float s1_intercept = -0.683571429;
+float s2_slope = 0.991791209;
+float s2_intercept = -0.954175824;
+
+
 void setup() {
   Serial.begin(115200);
   pinMode(sensor1, INPUT);
@@ -33,7 +39,7 @@ void setup() {
 void loop() {
   // Hace las n mediciones y las suma
   s1_distance_avg = 0; // Hacer reset por favor!
-  s2_distance_avg = 0; 
+  s2_distance_avg = 0;
   for (int i = 0; i < num_med; i++) {
     s1_voltage = analogRead(sensor1);
     s2_voltage = analogRead(sensor2);
@@ -51,12 +57,12 @@ void loop() {
   s2_distance_avg = s2_distance_avg / num_med; // Saca el promedio
 
   // Calibración hecha en el excel: NotBond
-  //s1_distance_calibrated = (s1_distance_avg + 2.358681319) / 1.004824176;
+  s1_distance_calibrated = (s1_distance_avg - s1_intercept) / s1_slope;
   //Serial.println(s1_distance_avg);
-  //Serial.println(s1_distance_calibrated);
+  Serial.println(s1_distance_calibrated);
 
   // Calibración hecha en el excel: Bond
-  s2_distance_calibrated = (s2_distance_avg - 1.260384615) / 0.994346154;
+  s2_distance_calibrated = (s2_distance_avg - s2_intercept) / s2_slope;
   //Serial.println(s2_distance_avg);
-  Serial.println(s2_distance_calibrated);
+  //Serial.println(s2_distance_calibrated);
 }
