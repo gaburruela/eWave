@@ -291,25 +291,36 @@ try:
 except KeyboardInterrupt:
     print("Deteniendo la lectura de datos.")
 
-print('Datapoints per wave:', datapoints_per_wave)
+print('Length of data:', len(x_data))
 
-Bond_graph = plt.figure()
-Bond_ax = Bond_graph.add_subplot(111)
-Bond_line, = Bond_ax.plot(x_data, y_data1, lw = 2, marker = '.')
-Bond_ax.set_xlabel('Time (s)')
+# Plot variables
+wave_graph = plt.figure()
+Bond_ax = wave_graph.add_subplot(111)
 
 # Slider
-num_graph_waves = 5 # Amount of waves to plot
+num_graph_waves = 4 # Amount of waves to plot
 data_range = num_graph_waves*datapoints_per_wave # Resulting amount of data points to plot
+max_data_ratio = data_range / len(x_data)
+slider_width = 0.65
+time_range = wave_graph.add_axes([0.15, 0.05, slider_width, 0.03]) # Slider visual dimensions
 
-# Make a horizontal slider to control the frequency.
-time_range = Bond_graph.add_axes([0.25, 0.1, 0.65, 0.03]) # Slider visual dimensions
+
+# Generate wave lines
+Bond_line, = Bond_ax.plot(x_data[:data_range], y_data2[:data_range], lw = 2, marker = '.', label = 'Bond')
+noBond_line, = Bond_ax.plot(x_data[:data_range], y_data1[:data_range], lw = 2, marker = '.', label = 'noBond', color = 'green')
+
+# Generate x axis label
+Bond_ax.set_xlabel('Time (s)')
+Bond_ax.legend() # Add legend
+
+# Plot readjustments to fit slider
+wave_graph.subplots_adjust(left=0.15, bottom=0.2)
 
 time_slider = Slider(
     ax = time_range,
     label = 'Time (s)',
     valmin = 0,
-    valmax = 100,
+    valmax = slider_width*100,
     valinit = 0,
     valstep = 1
 )
@@ -319,15 +330,20 @@ plt.xlim([0, data_range])
 
 # Update graph variables
 def update_slider(val):
-    slider_pos = int(val*(len(x_data) - data_range -1)/100) # Mapea el rango del slider a la posicion del arreglo
+    # Slider mapping
+    slider_pos = int(val*(len(x_data) - data_range -1)/(slider_width*100)) # Mapea el rango del slider a la posicion del arreglo
+    
+    # Ajusta el lim del eje x para el nuevo valor del slider
     plt.subplot(111)
-    plt.xlim([x_data[slider_pos], x_data[slider_pos + data_range]]) # Ajusta el lim del eje x para el nuevo valor del slider
+    plt.xlim([x_data[slider_pos], x_data[slider_pos + data_range]]) 
 
     # Da nuevos datos por graficar
     Bond_line.set_ydata(y_data1[slider_pos:slider_pos + data_range])
     Bond_line.set_xdata(x_data[slider_pos:slider_pos + data_range])
+    noBond_line.set_ydata(y_data2[slider_pos:slider_pos + data_range])
+    noBond_line.set_xdata(x_data[slider_pos:slider_pos + data_range])
 
-    Bond_graph.canvas.draw_idle()
+    wave_graph.canvas.draw_idle()
     
 # Function to call on eahc slider change
 time_slider.on_changed(update_slider)
