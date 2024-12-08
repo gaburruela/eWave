@@ -22,8 +22,8 @@ data = pandas.read_csv(csv_filename)
 
 # Get data from ultrasonic sensors
 x_data = np.array(data['Time (s)'].tolist())
-y_data1 = np.array(data['Height 1 (mm)'].tolist())
-y_data2 = np.array(data['Height 2 (mm)'].tolist())
+y_data1 = np.array(data['noBond_height 1 (mm)'].tolist())
+y_data2 = np.array(data['Bond_height 2 (mm)'].tolist())
 
 x_data = x_data - x_data[0] # Phaseshift to start measurements at zero
 

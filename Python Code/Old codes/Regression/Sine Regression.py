@@ -32,9 +32,9 @@ x_data = np.array(data['Time (s)'].tolist())
 x_data = x_data - x_data[0] # Phaseshift to start measurements at zero
 
 # Get data from accelerometer
-accel_x = np.array(data['Accel_x (m2/s)'].tolist())
-accel_y = np.array(data['Accel_y (m2/s)'].tolist())
-accel_z = np.array(data['Accel_z (m2/s)'].tolist())
+accel_x = np.array(data['Accel_x (m/s2)'].tolist())
+accel_y = np.array(data['Accel_y (m/s2)'].tolist())
+accel_z = np.array(data['Accel_z (m/s2)'].tolist())
 accel_z -= 9.8
 
 accel_total = np.sqrt(accel_x**2 + accel_y**2 + accel_z**2)
@@ -45,21 +45,21 @@ plt.plot(x_data, accel_x, color='r', label='Acceleration x')
 plt.plot(x_data, accel_y, color='g', label='Acceleration y')
 plt.plot(x_data, accel_z, color='b', label='Acceleration z')
 plt.legend()
-plt.ylabel('Acceleration (m²/s)')
+plt.ylabel('Acceleration (m/s²)')
 plt.title('Wavemaker flap accelaration')
 
 plt.subplot(212)
 plt.plot(x_data, accel_total, 'c', label='Acceleration magnitude')
 plt.legend()
 plt.xlabel('Time (s)')
-plt.ylabel('Acceleration (m²/s)')
+plt.ylabel('Acceleration (m/s²)')
 
 plt.show()
 
 
 # Get data from ultrasonic sensors
-y_data1 = np.array(data['Height 1 (mm)'].tolist())
-y_data2 = np.array(data['Height 2 (mm)'].tolist())
+y_data1 = np.array(data['noBond_height 1 (mm)'].tolist())
+y_data2 = np.array(data['Bond_height 2 (mm)'].tolist())
 
 # Preliminary graphs to make initial guesses
 plt.subplot(211) # For initial guesses
@@ -168,7 +168,7 @@ freq = (freq1 + freq2) / (4 * np.pi) # in Hz
 
 # Get wavelength
 distance_sensors = 2220 # [mm]
-phase_diff = phase2 - phase1 # [rad] - Order does matter (Bond comes first)
+phase_diff = phase1 - phase2 # [rad] - Order does matter (Bond comes first)
 phase_diff = phase_diff % (2*np.pi) # Get between 0 and 2pi
 
 crests = int(input('\nNumber of crests between sensors: ')) # Number of crests between sensors
