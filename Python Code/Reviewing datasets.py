@@ -160,6 +160,9 @@ pos_counter = 0
 # ACTUAL CODE
 # Abre el archivo CSV en modo de escritura
 
+crests = int(input('\nCrests between sensors: '))
+crest_flag = False
+
 try:
     while pos_counter < len(x_data): # Usar esta linea cuando se usa el archivo de datasets
         # Datasets file info
@@ -291,7 +294,7 @@ try:
 except KeyboardInterrupt:
     print("Deteniendo la lectura de datos.")
 
-print('Length of data:', len(x_data))
+# print('Length of data:', len(x_data))
 
 # Plot variables
 wave_graph = plt.figure()
