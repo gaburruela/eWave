@@ -132,9 +132,9 @@ def Stats(var):
 
 # DATA READING AND PREPROCESSING
 # Read the actual data from csv file
-# csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
+csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
 #csv_path = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\\' # Para Andrés
-csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
+#csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
 
 # Make sure to change for each test
 print('\nFile name information:')
@@ -165,14 +165,32 @@ crest_flag = False
 
 try:
     while pos_counter < len(x_data): # Usar esta linea cuando se usa el archivo de datasets
-        # Datasets file info
-        ttime = x_data[pos_counter]
-        Bond_height = y_data1[pos_counter]
-        noBond_height = y_data2[pos_counter]
 
+        # Get time starting at zero
         if time_start_flag == True:
             time_start_flag = False
-            time_start = float(ttime)
+            time_start = float(x_data[pos_counter])
+
+        # If at any point the current time is less than the starting time reset everything
+        if float(x_data[pos_counter]) < time_start:
+            time_start = float(x_data[pos_counter])
+            noBond_first_wave = True
+            Bond_first_wave = True
+            noBond_half_period = []
+            noBond_wave_counter = 0
+            Bond_half_period = []
+            Bond_wave_counter = 0
+            noBond_pp = []
+            Bond_pp = []
+            noBond_freq = []
+            Bond_freq = []
+            wavelength = []
+
+        # Datasets file info
+        ttime = x_data[pos_counter] - time_start
+        Bond_height = y_data1[pos_counter]
+        noBond_height = y_data2[pos_counter]
+        
 
         # NO BOND
         # Not an empty array
@@ -309,8 +327,8 @@ time_range = wave_graph.add_axes([0.15, 0.05, slider_width, 0.03]) # Slider visu
 
 
 # Generate wave lines
-Bond_line, = Bond_ax.plot(x_data[:data_range], y_data2[:data_range], lw = 2, marker = '.', label = 'Bond')
-noBond_line, = Bond_ax.plot(x_data[:data_range], y_data1[:data_range], lw = 2, marker = '.', label = 'noBond', color = 'green')
+Bond_line, = Bond_ax.plot(x_data[:data_range]-time_start, y_data2[:data_range], lw = 2, marker = '.', label = 'Bond')
+noBond_line, = Bond_ax.plot(x_data[:data_range]-time_start, y_data1[:data_range], lw = 2, marker = '.', label = 'noBond', color = 'green')
 
 # Generate x axis label
 Bond_ax.set_xlabel('Time (s)')
@@ -334,17 +352,17 @@ plt.xlim([0, data_range])
 # Update graph variables
 def update_slider(val):
     # Slider mapping
-    slider_pos = int(val*(len(x_data) - data_range -1)/(slider_width*100)) # Mapea el rango del slider a la posicion del arreglo
+    slider_pos = int(val*(len(x_data) - data_range -1)/(slider_width*100)) # Mapea el rango del slider a la posición del arreglo
     
     # Ajusta el lim del eje x para el nuevo valor del slider
     plt.subplot(111)
-    plt.xlim([x_data[slider_pos], x_data[slider_pos + data_range]]) 
+    plt.xlim([x_data[slider_pos]-time_start, x_data[slider_pos + data_range]-time_start]) 
 
     # Da nuevos datos por graficar
     Bond_line.set_ydata(y_data1[slider_pos:slider_pos + data_range])
-    Bond_line.set_xdata(x_data[slider_pos:slider_pos + data_range])
+    Bond_line.set_xdata(x_data[slider_pos:slider_pos + data_range]-time_start)
     noBond_line.set_ydata(y_data2[slider_pos:slider_pos + data_range])
-    noBond_line.set_xdata(x_data[slider_pos:slider_pos + data_range])
+    noBond_line.set_xdata(x_data[slider_pos:slider_pos + data_range]-time_start)
 
     wave_graph.canvas.draw_idle()
     
@@ -352,3 +370,5 @@ def update_slider(val):
 time_slider.on_changed(update_slider)
 
 plt.show()
+
+# If there are wonky time measurements at the start the graph will break at the left most position
