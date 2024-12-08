@@ -133,7 +133,7 @@ screen_height = 864
 
 window.geometry(f"{screen_width}x{screen_height}")
 
-image = Image.open("images.png")
+image = Image.open("eWave logo.png")
 photo = ImageTk.PhotoImage(image)
 
 image_label = tk.Label(window, image = photo, bg="#80e0a7")
