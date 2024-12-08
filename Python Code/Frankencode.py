@@ -378,9 +378,25 @@ def Update_graphs():
                         noBond_height = simulated_sine[sine_counter + sim_offset]
                         '''
 
+                        # Get time starting at zero
                         if time_start_flag == True:
                             time_start_flag = False
                             time_start = float(data[0])
+
+                        # If at any point the current time is less than the starting time reset everything
+                        if float(data[0]) < time_start:
+                            time_start = float(data[0])
+                            noBond_first_wave = True
+                            Bond_first_wave = True
+                            noBond_half_period = []
+                            noBond_wave_counter = 0
+                            Bond_half_period = []
+                            Bond_wave_counter = 0
+                            noBond_pp = []
+                            Bond_pp = []
+                            noBond_freq = []
+                            Bond_freq = []
+                            wavelength = []
                         
                         # Get serial data into variables
                         ttime = float(data[0]) - time_start
@@ -489,9 +505,10 @@ def Update_graphs():
                             if Bond_half_period[-1] * Bond_height < 0 and Bond_anti_ripple == 0:
                                 Bond_anti_ripple = 1
                                 # Ignore first wave
-                                if Bond_first_wave == True and noBond_first_wave == False:
-                                    Bond_first_wave = False
-                                    Bond_prev_time = ttime
+                                if Bond_first_wave == True:
+                                    if noBond_first_wave == False: # No Bond should already be done with its first wave
+                                        Bond_first_wave = False
+                                        Bond_prev_time = ttime
                                 else:
                                     #print('Bond Wave counter:', Bond_wave_counter)
                                     # Peak-Peak
