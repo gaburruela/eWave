@@ -125,8 +125,8 @@ crest_flag = True
 crests = 0
 
 # Others
-noBond_real_zero = 262
-Bond_real_zero = 170
+noBond_real_zero = 411
+Bond_real_zero = 410
 anti_ripple = 2
 
 # INTERFACE ANTESALA
@@ -500,8 +500,8 @@ def Update_graphs():
                         # BOND
                         # Not an empty array
                         if len(Bond_measurements) >= 1:
-                            if Bond_anti_ripple != anti_ripple:
-                                if Bond_anti_ripple > 2:
+                            if Bond_anti_ripple != 0:
+                                if Bond_anti_ripple > anti_ripple:
                                     Bond_anti_ripple = 0
                                 else:
                                     Bond_anti_ripple += 1
