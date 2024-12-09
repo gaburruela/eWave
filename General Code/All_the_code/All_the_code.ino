@@ -88,7 +88,7 @@ const int med_zero = 100; // zero-leveling
 // Time variables [ms]
 unsigned long millis_previous = 0;
 unsigned long millis_current;
-const long time_interval = 125; // Around 125
+const long time_interval = 40; // Around 40
 
 // Define sensor pins
 const int s1 = A3; // Not Bond
@@ -160,8 +160,9 @@ void Zero_Leveling() {
   //s1_zero_lvl = (s1_zero_lvl - s1_intercept) / s1_slope;
   //s2_zero_lvl = (s2_zero_lvl - s2_intercept) / s2_slope;
 
-  Serial.println("Zero levels:");
-  Serial.println(s1_zero_lvl);
+  Serial.print("Zero levels,");
+  Serial.print(s1_zero_lvl);
+  Serial.print(",");
   Serial.println(s2_zero_lvl);
 }
 

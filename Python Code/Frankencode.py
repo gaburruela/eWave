@@ -49,7 +49,6 @@ time.sleep(2)
 # Wave variables
 max_waves = 100
 graph_max = 50 # Data points, not waves
-time_start_flag = True
 
 # Graph variables
 time_csv = []
@@ -73,6 +72,10 @@ Bond_first_wave = True
 # Flags to avoid multiple zero crossings
 noBond_anti_ripple = 0
 Bond_anti_ripple = 0
+
+# Other flags
+time_start_flag = True
+amplitude_flag = 0
 
 # Store half a period of the wave
 noBond_half_period = []
@@ -121,6 +124,10 @@ sensor_dist = 2.22
 crest_flag = True
 crests = 0
 
+# Others
+noBond_real_zero = 262
+Bond_real_zero = 170
+anti_ripple = 2
 
 # INTERFACE ANTESALA
 window = tk.Tk() # The main Tkinter window
@@ -340,7 +347,7 @@ data = [0,1,2,3,4,5,6,7,8]
 
 def Update_graphs():
     global time_csv, Bond_measurements, Bond_line, noBond_measurements, noBond_line
-    global noBond_first_wave, Bond_first_wave, time_start_flag, noBond_anti_ripple, Bond_anti_ripple
+    global noBond_first_wave, Bond_first_wave, time_start_flag, noBond_anti_ripple, Bond_anti_ripple, amplitude_flag
     global noBond_half_period, noBond_wave_counter, Bond_half_period, Bond_wave_counter
     global noBond_max_height, noBond_min_height, Bond_max_height, Bond_min_height
     global noBond_prev_time, Bond_prev_time, noBond_sign_cross, Bond_sign_cross, time_diff
@@ -398,16 +405,12 @@ def Update_graphs():
                             Bond_freq = []
                             wavelength = []
                         
-                        # Get serial data into variables
+                        # Get serial data into variables (offset made with real measurements)
                         ttime = float(data[0]) - time_start
-                        noBond_height = float(data[9])
-                        Bond_height = float(data[10])
+                        noBond_height = float(data[9]) + noBond_offset
+                        Bond_height = float(data[10]) + Bond_offset
                         
                         # Update tkinter window
-                        Bond_measurements.append(Bond_height)
-                        noBond_measurements.append(noBond_height)
-                        time_csv.append(ttime)
-
                         Humidity_value = (float(data[5]))
                         Humidity_valuetext.config(text = f"Humedad (%): {Humidity_value:.2f}")
                         
@@ -440,15 +443,15 @@ def Update_graphs():
 
                         # NO BOND
                         # Not an empty array
-                        if len(noBond_half_period) >= 1:
+                        if len(noBond_measurements) >= 1:
                             if noBond_anti_ripple != 0:
-                                if noBond_anti_ripple > 2:
+                                if noBond_anti_ripple > anti_ripple:
                                     noBond_anti_ripple = 0
                                 else:
                                     noBond_anti_ripple += 1
                                 
                             # New zero crossing found
-                            if noBond_half_period[-1] * noBond_height < 0 and noBond_anti_ripple == 0:
+                            if noBond_measurements[-1] * noBond_height < 0 and noBond_anti_ripple == 0:
                                 noBond_anti_ripple += 1
                                 # Ignore first wave
                                 if noBond_first_wave == True:
@@ -490,19 +493,21 @@ def Update_graphs():
 
                                 #print('\nNo Bond:\nHalf period: \n', noBond_half_period)
                                 noBond_half_period = []
-                        noBond_half_period.append(noBond_height)
+                        # Only add a measurement every 3 measurements
+                        if amplitude_flag == 0:
+                            noBond_half_period.append(noBond_height)
 
                         # BOND
                         # Not an empty array
-                        if len(Bond_half_period) >= 1:
-                            if Bond_anti_ripple != 0:
+                        if len(Bond_measurements) >= 1:
+                            if Bond_anti_ripple != anti_ripple:
                                 if Bond_anti_ripple > 2:
                                     Bond_anti_ripple = 0
                                 else:
                                     Bond_anti_ripple += 1
                             
                             # New zero crossing found
-                            if Bond_half_period[-1] * Bond_height < 0 and Bond_anti_ripple == 0:
+                            if Bond_measurements[-1] * Bond_height < 0 and Bond_anti_ripple == 0:
                                 Bond_anti_ripple = 1
                                 # Ignore first wave
                                 if Bond_first_wave == True:
@@ -541,10 +546,20 @@ def Update_graphs():
                                 #print('\nBond:\nHalf period: \n', Bond_half_period)
                                 Bond_half_period = []
 
-                        Bond_half_period.append(Bond_height)
+                        if amplitude_flag == 0:
+                            Bond_half_period.append(Bond_height)
+
+                        amplitude_flag += 1
+                        # Make sure it stays bounded at 3
+                        if amplitude_flag == 3:
+                            amplitude_flag = 0
+                            
                         #sine_counter += 1 # Only for simulations
 
                         # START GRAPH AND INTERFACE
+                        Bond_measurements.append(Bond_height)
+                        noBond_measurements.append(noBond_height)
+                        time_csv.append(ttime)
 
                         if len(Bond_measurements) % 10 == 0:
                             Bond_line.set_xdata(time_csv)
@@ -570,8 +585,21 @@ def Update_graphs():
                             if len(time_csv) >= graph_max:
                                 Bond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
                                 noBond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
-                    
-                    elif line.find('Ambient humidity')!=-1 and crest_flag:
+
+                    # Store zero levelings and offsets
+                    elif line.find('Zero levels') != -1:
+                        data_zero = line.split(',')
+                        noBond_zero_lvl = float(data_zero[1])
+                        Bond_zero_lvl = float(data_zero[2])
+                        noBond_offset = noBond_real_zero - noBond_zero_lvl
+                        Bond_offset = Bond_real_zero - Bond_zero_lvl
+
+                        print(line)
+                        print('No Bond offset: ', noBond_offset)
+                        print('Bond offset: ', Bond_offset)
+                        
+                    # Ask for total number of crests
+                    elif line.find('Ambient humidity') != -1 and crest_flag:
                         crests = int(input('\nCrests between sensors: '))
                         crest_flag = False
                         print(line)
@@ -586,7 +614,7 @@ def Update_graphs():
         if input('\nWas the wavelength correct? (y/n): ') == 'n':
             corr = int(input('How many crests do you need to add?: '))
             for i in range(len(wavelength)):
-                wavelength[i] = 1/(1/wavelength[i] + corr/2.2)
+                wavelength[i] = 1/(1/wavelength[i] + corr/sensor_dist)
 
             wavelength_avg, wavelength_stdev = Stats(wavelength)
 
