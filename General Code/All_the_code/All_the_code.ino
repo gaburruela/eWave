@@ -1,7 +1,7 @@
 // Código unificado general :)
 
 // BUTTON - Change from zero leveling (0) to inductive (1) to humidity (2) to everything else (3)
-int button_counter = -1;
+int button_counter = 3;
 int button_pin = 10;
 int button_rst = 11;
 
@@ -88,11 +88,12 @@ const int med_zero = 100; // zero-leveling
 // Time variables [ms]
 unsigned long millis_previous = 0;
 unsigned long millis_current;
-const long time_interval = 125; // Around 125
+const long time_interval = 40; // Around 40
 
 // Define sensor pins
 const int s1 = A3; // Not Bond
 const int s2 = A2; // Bond
+const int sync = 7;
 
 // Sensor 1 variables
 float s1_voltage;
@@ -108,9 +109,9 @@ float s2_zero_lvl = 0;
 // Manual mapping
 // Not Bond
 const float s1_min_Volt = 175; // [bits]
-const float s1_max_Volt = 881; // [bits]
-const float s1_min_Dist = 88.5; // [mm]
-const float s1_max_Dist = 975; // [mm]
+const float s1_max_Volt = 883; // [bits]
+const float s1_min_Dist = 88; // [mm]
+const float s1_max_Dist = 973; // [mm]
 // Bond
 const float s2_min_Volt = 176;
 const float s2_max_Volt = 882;
@@ -119,11 +120,11 @@ const float s2_max_Dist = 967;
 
 // Parámetros de calibración - Revisar Excel
 // Not Bond
-const float s1_slope = 0.997678571;
-const float s1_intercept = -0.683571429;
+const float s1_slope = 1;
+const float s1_intercept = -1.5;
 // Bond
-const float s2_slope = 0.991791209;
-const float s2_intercept = -0.954175824;
+const float s2_slope = 1;
+const float s2_intercept = -1.5;
 
 
 // EXTERNAL FUNCTIONS
@@ -157,11 +158,12 @@ void Zero_Leveling() {
   s2_zero_lvl /= med_zero;
 
   // Calibrate sensors
-  //s1_zero_lvl = (s1_zero_lvl - s1_intercept) / s1_slope;
-  //s2_zero_lvl = (s2_zero_lvl - s2_intercept) / s2_slope;
+  s1_zero_lvl = (s1_zero_lvl - s1_intercept) / s1_slope;
+  s2_zero_lvl = (s2_zero_lvl - s2_intercept) / s2_slope;
 
-  Serial.println("Zero levels:");
-  Serial.println(s1_zero_lvl);
+  Serial.print("Zero levels,");
+  Serial.print(s1_zero_lvl);
+  Serial.print(",");
   Serial.println(s2_zero_lvl);
 }
 
@@ -273,22 +275,29 @@ void All_Measurements() {
 
 
   // ULTRASONICS
+  // Synchronization, go!
+  digitalWrite(sync, HIGH);
+  delay(2);
+  digitalWrite(sync, LOW);
+  delay(2);
+
   s1_voltage = analogRead(s1);
   s2_voltage = analogRead(s2);
   s1_distance = mapping(s1_voltage, 1);
   s2_distance = mapping(s2_voltage, 2);
 
   // Calibration
-  //s1_distance_calibrated = (s1_distance - s1_intercept) / s1_slope;
-  //s2_distance_calibrated = (s2_distance - s2_intercept) / s2_slope;
-  s1_distance_calibrated = s1_distance;
-  s2_distance_calibrated = s2_distance;
+  s1_distance_calibrated = (s1_distance - s1_intercept) / s1_slope;
+  s2_distance_calibrated = (s2_distance - s2_intercept) / s2_slope;
+  //s1_distance_calibrated = s1_distance;
+  //s2_distance_calibrated = s2_distance;
 }
 
 // Print results
 void Print_Results() {
   // PRINT OUT ALL THE VALUES FOR TESTING ONLY
   // Time
+  millis_current = millis();
   Serial.println("Time (s)");
   Serial.println(float(millis_current) / 1000); // Time in seconds
 
@@ -398,6 +407,7 @@ void setup() {
   // ULTRASONICS
   pinMode(s1, INPUT);
   pinMode(s2, INPUT);
+  pinMode(sync, OUTPUT);
 
 
   // BUTTON
@@ -454,7 +464,7 @@ void loop() {
           if (millis_current - millis_previous >= time_interval) {
             millis_previous = millis_current;
             All_Measurements();
-            
+
             // Print results to csv - With filter for if ultrasonics turn off
             if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
               //Print_Results();
