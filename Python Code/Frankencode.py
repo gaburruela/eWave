@@ -125,8 +125,8 @@ crest_flag = True
 crests = 0
 
 # Others
-noBond_real_zero = 411
-Bond_real_zero = 410
+noBond_real_zero = 427
+Bond_real_zero = 427
 anti_ripple = 2
 
 # INTERFACE ANTESALA
@@ -407,8 +407,11 @@ def Update_graphs():
                         
                         # Get serial data into variables (offset made with real measurements)
                         ttime = float(data[0]) - time_start
-                        noBond_height = float(data[9]) + noBond_offset
-                        Bond_height = float(data[10]) + Bond_offset
+                        noBond_height = float(data[9])
+                        Bond_height = float(data[10])
+                        
+                        #noBond_height = float(data[9]) + noBond_offset
+                        #Bond_height = float(data[10]) + Bond_offset
                         
                         # Update tkinter window
                         Humidity_value = (float(data[5]))
@@ -451,7 +454,7 @@ def Update_graphs():
                                     noBond_anti_ripple += 1
                                 
                             # New zero crossing found
-                            if noBond_measurements[-1] * noBond_height < 0 and noBond_anti_ripple == 0:
+                            if noBond_measurements[-1] * noBond_height < 0 and noBond_anti_ripple == 0 or noBond_height == 0:
                                 noBond_anti_ripple += 1
                                 # Ignore first wave
                                 if noBond_first_wave == True:
@@ -507,7 +510,7 @@ def Update_graphs():
                                     Bond_anti_ripple += 1
                             
                             # New zero crossing found
-                            if Bond_measurements[-1] * Bond_height < 0 and Bond_anti_ripple == 0:
+                            if Bond_measurements[-1] * Bond_height < 0 and Bond_anti_ripple == 0 or Bond_height == 0:
                                 Bond_anti_ripple = 1
                                 # Ignore first wave
                                 if Bond_first_wave == True:
