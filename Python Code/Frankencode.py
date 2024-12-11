@@ -29,8 +29,12 @@ except serial.SerialException as e:
     exit()
 
 # Nombre del archivo CSV
-crank_pos = str(input('Crank Position: '))
+crank_pos = input('Crank Position: ')
 motor_freq = input('Motor Frequency (Hz): ')
+
+if input('Are you sure? (y/n): ') == 'n':
+    crank_pos = input('Crank Position: ')
+    motor_freq = input('Motor Frequency (Hz): ')
 
 print('\nReady to start measurements!')
 
@@ -446,7 +450,7 @@ def Update_graphs():
 
                         # NO BOND
                         # Not an empty array
-                        if len(noBond_measurements) >= 1:
+                        if len(noBond_half_period) >= 1:
                             if noBond_anti_ripple != 0:
                                 if noBond_anti_ripple > anti_ripple:
                                     noBond_anti_ripple = 0
@@ -502,7 +506,7 @@ def Update_graphs():
 
                         # BOND
                         # Not an empty array
-                        if len(Bond_measurements) >= 1:
+                        if len(Bond_half_period) >= 1:
                             if Bond_anti_ripple != 0:
                                 if Bond_anti_ripple > anti_ripple:
                                     Bond_anti_ripple = 0
@@ -613,11 +617,13 @@ def Update_graphs():
             print("Deteniendo la lectura de datos.")
             
         ser.close()
-        # Correct for wrong number of crests
+        # Correct for wrong number of crests - ALWAYS MAKE CORR POSITIVE
         if input('\nWas the wavelength correct? (y/n): ') == 'n':
             corr = int(input('How many crests do you need to add?: '))
             for i in range(len(wavelength)):
-                wavelength[i] = 1/(1/wavelength[i] + corr/sensor_dist)
+                # Don't use for more than 2 crests
+                if wavelength[i] != sensor_dist:
+                    wavelength[i] = 1/(1/wavelength[i] + corr/sensor_dist)
 
             wavelength_avg, wavelength_stdev = Stats(wavelength)
 

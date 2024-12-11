@@ -148,11 +148,11 @@ data = pandas.read_csv(csv_filename)
 
 # Get time data
 x_data = np.array(data['Time (s)'].tolist())
-# x_data = x_data - x_data[0] # Phaseshift to start measurements at zero
+#x_data = x_data - x_data[0] # Phaseshift to start measurements at zero
 
 # Get data from ultrasonic sensors
-y_data1 = np.array(data['Bond_height 2 (mm)'].tolist())  # Bond 
-y_data2 = np.array(data['noBond_height 1 (mm)'].tolist())  # noBond
+y_data1 = np.array(data['Bond_height 2 (mm)'].tolist())  # noBond 
+y_data2 = np.array(data['noBond_height 1 (mm)'].tolist())  # Bond
 
 pos_counter = 0
 
@@ -163,8 +163,10 @@ pos_counter = 0
 crests = int(input('\nCrests between sensors: '))
 crest_flag = False
 
+max_measurements = len(x_data)
+
 try:
-    while pos_counter < len(x_data): # Usar esta linea cuando se usa el archivo de datasets
+    while pos_counter < max_measurements: # Usar esta linea cuando se usa el archivo de datasets
 
         # Get time starting at zero
         if time_start_flag == True:
