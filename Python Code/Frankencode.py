@@ -51,7 +51,7 @@ time.sleep(2)
 # GENERAL VARIABLES
 
 # Wave variables
-max_waves = 800
+max_waves = 100
 graph_max = 50 # Data points, not waves
 
 # Graph variables
@@ -450,7 +450,7 @@ def Update_graphs():
 
                         # NO BOND
                         # Not an empty array
-                        if len(noBond_measurements) >= 1:
+                        if len(noBond_half_period) >= 1:
                             if noBond_anti_ripple != 0:
                                 if noBond_anti_ripple > anti_ripple:
                                     noBond_anti_ripple = 0
@@ -506,7 +506,7 @@ def Update_graphs():
 
                         # BOND
                         # Not an empty array
-                        if len(Bond_measurements) >= 1:
+                        if len(Bond_half_period) >= 1:
                             if Bond_anti_ripple != 0:
                                 if Bond_anti_ripple > anti_ripple:
                                     Bond_anti_ripple = 0
@@ -622,7 +622,7 @@ def Update_graphs():
             corr = int(input('How many crests do you need to add?: '))
             for i in range(len(wavelength)):
                 # Don't use for more than 2 crests
-                if wavelength[i] < sensor_dist:
+                if wavelength[i] != sensor_dist:
                     wavelength[i] = 1/(1/wavelength[i] + corr/sensor_dist)
 
             wavelength_avg, wavelength_stdev = Stats(wavelength)
