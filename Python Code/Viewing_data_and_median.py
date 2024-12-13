@@ -153,15 +153,16 @@ def find_position_in_array(array):
     # Search for the position and frequency in the array
     for index, (pos, freq) in enumerate(array):
         if pos == position and freq == frequency:
+            print('Index position is:', index)
             return index  # Return the index if a match is found
     
     print("No match found in the array.")
     return -1  # Return -1 if no match is found
 
 # Redo variables
-file_pos = 0 # Pos inicial para iteracion de los datasets
-filename = [['A','20b'],['A','22'],['A','24b'],['A','26'],['A','28'],['A','30'],['A','32c'],['A','34'],['A','36'],['A','40']
-           ,['B','17'],['B','18'],['B','19.5'],['B','20'],['B','21'],['B','22'],['B','23'],['B','24'],['B','25'],['B','26'],['B','27'],['B','28'],['B','29b'],['B','30'],['B','31'],['B','32'],['B','33'],['B','34']
+file_pos = 13 # Pos inicial para iteracion de los datasets
+filename = [['A','20b'],['A','22'],['A','24b'],['A','26'],['A','28'],['A','30'],['A','32c'],['A','34'],['A','36'],['A','38'],['A','40']
+           ,['B','17'],['B','18'],['B','19'],['B','19.5'],['B','20'],['B','21'],['B','22'],['B','23'],['B','24'],['B','25'],['B','26'],['B','27'],['B','28'],['B','29b'],['B','30'],['B','31'],['B','32'],['B','33'],['B','34']
            ,['C','15'],['C','16'],['C','17'],['C','18'],['C','19'],['C','20'],['C','21'],['C','22'],['C','23'],['C','24'],['C','25'],['C','26b']
            ,['D','14'],['D','15'],['D','18'],['D','20'],['D','22'],['D','25']
            ,['E','15'],['E','18'],['E','19'],['E','20'],['E','23']]
