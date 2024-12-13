@@ -160,8 +160,8 @@ def find_position_in_array(array):
     return None
 
 # Redo variables
-file_pos = 0
-filename = [['A','20b'],['A','22'],['A','24b'],['A','26'],['A','28'],['A','30'],['A','c'],['A','34'],['A','36'],['A','40']
+file_pos = 22
+filename = [['A','20b'],['A','22'],['A','24b'],['A','26'],['A','28'],['A','30'],['A','32c'],['A','34'],['A','36'],['A','40']
            ,['B','17'],['B','18'],['B','19.5'],['B','20'],['B','21'],['B','22'],['B','23'],['B','24'],['B','25'],['B','26'],['B','27'],['B','28'],['B','29b'],['B','30'],['B','31'],['B','32'],['B','33'],['B','34']
            ,['C','15'],['C','16'],['C','17'],['C','18'],['C','19'],['C','20'],['C','21'],['C','22'],['C','23'],['C','24'],['C','25'],['C','26b']
            ,['D','14'],['D','15'],['D','18'],['D','20'],['D','22'],['D','25']
@@ -191,6 +191,68 @@ try:
         # crank_pos = input('Crank Position: ')
         # motor_freq = input('Motor Frequency (Hz): ')
 
+        # Reset all parameters for new test
+        # Flags to ignore first wave
+        noBond_first_wave = True
+        Bond_first_wave = True
+
+        # Flags to avoid multiple zero crossings
+        noBond_anti_ripple = 0
+        Bond_anti_ripple = 0
+
+        # Other flags
+        time_start_flag = True
+        amplitude_flag = 0
+
+        # Store half a period of the wave
+        noBond_half_period = []
+        noBond_wave_counter = 0
+        Bond_half_period = []
+        Bond_wave_counter = 0
+
+        # Momentary variables
+        # Peak-Peak
+        noBond_max_height = 0
+        noBond_min_height = 0
+        Bond_max_height = 0
+        Bond_min_height = 0
+        # Frequency
+        noBond_prev_time = 0
+        Bond_prev_time = 0
+        # Wavelength
+        noBond_sign_cross = 0 # Just care about the sign
+        Bond_sign_cross = 0 # Just care about the sign
+        time_diff = 0
+
+        # Store all parameters - Has no size cap
+        noBond_pp = []
+        Bond_pp = []
+        noBond_freq = []
+        Bond_freq = []
+        wavelength = []
+
+        # Store averages and standard deviations - Using all past data
+        # Peak-Peak
+        noBond_pp_avg = 0
+        noBond_pp_stdev = 0
+        Bond_pp_avg = 0
+        Bond_pp_stdev = 0
+        # Frequency
+        noBond_freq_avg = 0
+        noBond_freq_stdev = 0
+        Bond_freq_avg = 0
+        Bond_freq_stdev = 0
+        # Wavelength
+        wavelength_avg = 0
+        wavelength_stdev = 0
+        wavelength_median = 0
+
+        # Wavelength thingies
+        sensor_dist = 2.22
+        crest_flag = True
+        crests = 0
+
+
         # To run through all dataset files
         dataset_filename = csv_path + filename[file_pos][0] + filename[file_pos][1]  + '.csv' # Chooses between different dataset files
         data = pandas.read_csv(dataset_filename) # Current file's dataset
@@ -214,7 +276,7 @@ try:
         # Quality of life for data viewing
         temp_datapoints = 0
         datapoints_per_wave = 0 # To adjust graph to some amount of waves on screen
-        while Bond_wave_counter < max_waves:
+        while Bond_wave_counter < max_waves and sim_counter < len(time_data):
 
             # Get time starting at zero
             if time_start_flag == True:
@@ -390,25 +452,25 @@ try:
         print('Bond freq average:', Bond_freq_avg, 'and std: ', Bond_freq_stdev)
         print('Wavelength average:', wavelength_avg, 'median:', wavelength_median, 'std: ', wavelength_stdev)
 
-        if (input('\nSave data? (y/n): ') == 'y') and changing_data == True:
-            results_file = open(csv_path + 'Results_with_median.csv', mode='a')
-            # Name of the test
-            crank_pos = filename[file_pos][0]
-            motor_freq = filename[file_pos][1]
+        # if (input('\nSave data? (y/n): ') == 'y') and changing_data == True:
+        results_file = open(csv_path + 'Results_with_median.csv', mode='a')
+        # Name of the test
+        crank_pos = filename[file_pos][0]
+        motor_freq = filename[file_pos][1]
 
-            results_file.write('\n' + crank_pos + ',' + motor_freq + ',')
-            # Add the results
-            results_file.write(str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
-            results_file.write(str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
-            results_file.write(str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
-            results_file.write(str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
-            results_file.write(str(wavelength_median) + ',' + str(wavelength_avg) + ',' + str(wavelength_stdev))
-            results_file.close() 
-        print('\nDone with viewing data?') # Por alguna razon entra en panico si no
+        results_file.write('\n' + crank_pos + ',' + motor_freq + ',')
+        # Add the results
+        results_file.write(str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
+        results_file.write(str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
+        results_file.write(str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
+        results_file.write(str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
+        results_file.write(str(wavelength_median) + ',' + str(wavelength_avg) + ',' + str(wavelength_stdev))
+        results_file.close() 
+        # print('\nDone with viewing data?') # Por alguna razon entra en panico si no
         
-        if (input('(y/n): ') == 'n') and changing_data == True:
-            file_pos += 1
-        else: break
+        # if (input('(y/n): ') == 'n') and changing_data == True:
+        file_pos += 1
+        # else: break
         
           
 
