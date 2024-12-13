@@ -129,12 +129,18 @@ def Wavelength(wavelength):
     # Add a full period per crest
     percentage = time_diff/period + (crests - 1)
 
-    # Make sure phase is in sync - if not take away half a period
-    if noBond_sign_cross * Bond_sign_cross < 0:
-        percentage -= 0.5
+    # # Make sure phase is in sync - if not take away half a period
+    # if noBond_sign_cross * Bond_sign_cross < 0:
+    #     percentage -= 0.5
 
-    if abs(percentage) > 0.001:
+    # if abs(percentage) > 0.001:
+    if time_diff == 0:
+        wavelength.append(sensor_dist)
+    else:
         wavelength.append(sensor_dist/percentage)
+    
+    # print('Wavelength:', wavelength)
+    print('Time diff used:', time_diff, 'Period:', period)
 
 
 def Stats(var):
@@ -288,6 +294,13 @@ try:
             # New zero crossing found
             if Bond_measurements[-1] * Bond_height < 0 and Bond_anti_ripple == 0 or Bond_height == 0:
                 Bond_anti_ripple = 1
+                
+                # New wavelength calculation
+                Bond_sign_cross = Bond_height
+                if noBond_first_wave == False and Bond_sign_cross*noBond_sign_cross > 0:
+                    time_diff = ttime - noBond_prev_time
+
+                
                 # Ignore first wave
                 if Bond_first_wave == True:
                     if noBond_first_wave == False: # No Bond should already be done with its first wave
@@ -309,10 +322,12 @@ try:
                         Bond_prev_time = ttime
                         #print('Freq test: ', Bond_freq)
                     
-                    # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
-                    else:
-                        time_diff = ttime - noBond_prev_time
-                        Bond_sign_cross = Bond_height
+                    # # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
+                    # else:
+                    #     time_diff = ttime - noBond_prev_time
+                    #     Bond_sign_cross = Bond_height
+                    #     print('Time diff calculation:', time_diff)
+                    #     print('Current time:', ttime, 'No Bond Prev time:', noBond_prev_time)
                     
                     if len(Bond_freq) >= 2:
                         Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)
@@ -345,6 +360,8 @@ try:
 
 except KeyboardInterrupt:
     print("Deteniendo la lectura de datos.")
+
+print('Resulting wavelenght:', wavelength_avg, 'Wavelength median:', wavelength_median)
 
 
 # # Correct for wrong number of crests - ALWAYS MAKE CORR POSITIVE

@@ -133,11 +133,14 @@ def Wavelength(wavelength):
     # Add a full period per crest
     percentage = time_diff/period + (crests - 1)
 
-    # Make sure phase is in sync - if not take away half a period
-    if noBond_sign_cross * Bond_sign_cross < 0:
-        percentage -= 0.5
+    # # Make sure phase is in sync - if not take away half a period
+    # if noBond_sign_cross * Bond_sign_cross < 0:
+    #     percentage -= 0.5
 
-    if abs(percentage) > 0.001:
+    # if abs(percentage) > 0.001:
+    if time_diff == 0:
+        wavelength.append(sensor_dist)
+    else:
         wavelength.append(sensor_dist/percentage)
 
 
@@ -164,7 +167,7 @@ def find_position_in_array(array):
     return -1  # Return -1 if no match is found
 
 # Redo variables
-file_pos = 0 # Pos inicial para iteracion de los datasets
+file_pos = 6 # Pos inicial para iteracion de los datasets
 filename = [['A','20b'],['A','22'],['A','24b'],['A','26'],['A','28'],['A','30'],['A','32c'],['A','34'],['A','36'],['A','38'],['A','40']
            ,['B','17'],['B','18'],['B','19'],['B','19.5'],['B','20'],['B','21'],['B','22'],['B','23'],['B','24'],['B','25'],['B','26'],['B','27'],['B','28'],['B','29b'],['B','30'],['B','31'],['B','32'],['B','33'],['B','34']
            ,['C','15'],['C','16'],['C','17'],['C','18'],['C','19'],['C','20'],['C','21'],['C','22'],['C','23'],['C','24'],['C','25'],['C','26b']
@@ -265,6 +268,7 @@ try:
         dataset_filename = csv_path + filename[file_pos][0] + filename[file_pos][1]  + '.csv' # Chooses between different dataset files
         data = pandas.read_csv(dataset_filename) # Current file's dataset
         print('\nWorking on file: ', filename[file_pos][0] + filename[file_pos][1])
+        print('File pos:', file_pos)
 
         # Get time data
         time_data = np.array(data['Time (s)'].tolist())
@@ -397,6 +401,12 @@ try:
                 
                 # New zero crossing found
                 if Bond_measurements[-1] * Bond_height < 0 and Bond_anti_ripple == 0 or Bond_height == 0:
+
+                    # New wavelength calculation
+                    Bond_sign_cross = Bond_height
+                    if noBond_first_wave == False and Bond_sign_cross*noBond_sign_cross > 0:
+                        time_diff = ttime - noBond_prev_time
+
                     Bond_anti_ripple = 1
                     # Ignore first wave
                     if Bond_first_wave == True:
@@ -419,10 +429,10 @@ try:
                             Bond_prev_time = ttime
                             #print('Freq test: ', Bond_freq)
                         
-                        # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
-                        else:
-                            time_diff = ttime - noBond_prev_time
-                            Bond_sign_cross = Bond_height
+                        # # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
+                        # else:
+                        #     time_diff = ttime - noBond_prev_time
+                        #     Bond_sign_cross = Bond_height
                         
                         if len(Bond_freq) >= 2:
                             Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)
@@ -468,20 +478,19 @@ try:
         print('Wavelength median:', wavelength_median, 'average:', wavelength_avg, 'std: ', wavelength_stdev)
 
         if changing_data == True:
-            results_file = open(csv_path + 'All_results_with_median.csv', mode='a')
+            results_file = open(csv_path + 'New_wavelengths.csv', mode='a')
             # Name of the test
             crank_pos = filename[file_pos][0]
             motor_freq = filename[file_pos][1]
 
             results_file.write('\n' + crank_pos + ',' + motor_freq + ',')
             # Add the results
-            results_file.write(str(noBond_pp_median) + ',' + str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
-            results_file.write(str(Bond_pp_median) + ',' + str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
-            results_file.write(str(noBond_freq_median) + ',' + str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
-            results_file.write(str(Bond_freq_median) + ',' + str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
+            # results_file.write(str(noBond_pp_median) + ',' + str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
+            # results_file.write(str(Bond_pp_median) + ',' + str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
+            # results_file.write(str(noBond_freq_median) + ',' + str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
+            # results_file.write(str(Bond_freq_median) + ',' + str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
             results_file.write(str(wavelength_median) + ',' + str(wavelength_avg) + ',' + str(wavelength_stdev))
             results_file.close() 
-        # print('\nDone with viewing data?') # Por alguna razon entra en panico si no
         
         if changing_data == True:
             file_pos += 1
