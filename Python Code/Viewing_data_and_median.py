@@ -147,20 +147,19 @@ def Stats(var):
 
 def find_position_in_array(array):
     # Get the position and frequency from the user
-    position = input("Enter the position (e.g., A, B, C, etc.): ")
-    frequency = input("Enter the frequency (as a number, e.g., 20, 32, etc.): ")
+    position = input("Crank position: ")
+    frequency = input("Frequency: ")
     
     # Search for the position and frequency in the array
     for index, (pos, freq) in enumerate(array):
         if pos == position and freq == frequency:
-            print(f"The position in the array is: {index}")
-            return index
+            return index  # Return the index if a match is found
     
     print("No match found in the array.")
-    return None
+    return -1  # Return -1 if no match is found
 
 # Redo variables
-file_pos = 22
+file_pos = 0 # Pos inicial para iteracion de los datasets
 filename = [['A','20b'],['A','22'],['A','24b'],['A','26'],['A','28'],['A','30'],['A','32c'],['A','34'],['A','36'],['A','40']
            ,['B','17'],['B','18'],['B','19.5'],['B','20'],['B','21'],['B','22'],['B','23'],['B','24'],['B','25'],['B','26'],['B','27'],['B','28'],['B','29b'],['B','30'],['B','31'],['B','32'],['B','33'],['B','34']
            ,['C','15'],['C','16'],['C','17'],['C','18'],['C','19'],['C','20'],['C','21'],['C','22'],['C','23'],['C','24'],['C','25'],['C','26b']
@@ -452,25 +451,25 @@ try:
         print('Bond freq average:', Bond_freq_avg, 'and std: ', Bond_freq_stdev)
         print('Wavelength average:', wavelength_avg, 'median:', wavelength_median, 'std: ', wavelength_stdev)
 
-        # if (input('\nSave data? (y/n): ') == 'y') and changing_data == True:
-        results_file = open(csv_path + 'Results_with_median.csv', mode='a')
-        # Name of the test
-        crank_pos = filename[file_pos][0]
-        motor_freq = filename[file_pos][1]
+        if changing_data == True:
+            results_file = open(csv_path + 'Results_with_median.csv', mode='a')
+            # Name of the test
+            crank_pos = filename[file_pos][0]
+            motor_freq = filename[file_pos][1]
 
-        results_file.write('\n' + crank_pos + ',' + motor_freq + ',')
-        # Add the results
-        results_file.write(str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
-        results_file.write(str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
-        results_file.write(str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
-        results_file.write(str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
-        results_file.write(str(wavelength_median) + ',' + str(wavelength_avg) + ',' + str(wavelength_stdev))
-        results_file.close() 
+            results_file.write('\n' + crank_pos + ',' + motor_freq + ',')
+            # Add the results
+            results_file.write(str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
+            results_file.write(str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
+            results_file.write(str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
+            results_file.write(str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
+            results_file.write(str(wavelength_median) + ',' + str(wavelength_avg) + ',' + str(wavelength_stdev))
+            results_file.close() 
         # print('\nDone with viewing data?') # Por alguna razon entra en panico si no
         
-        # if (input('(y/n): ') == 'n') and changing_data == True:
-        file_pos += 1
-        # else: break
+        if changing_data == True:
+            file_pos += 1
+        else: break
         
           
 
@@ -490,59 +489,59 @@ except KeyboardInterrupt:
 
 # Uncomment if want to see graph
 
-# # Plot variables
-# wave_graph = plt.figure()
-# Bond_ax = wave_graph.add_subplot(111)
+# Plot variables
+wave_graph = plt.figure()
+Bond_ax = wave_graph.add_subplot(111)
 
-# # Slider
-# num_graph_waves = 4 # Amount of waves to plot
-# data_range = num_graph_waves*datapoints_per_wave # Resulting amount of data points to plot
-# slider_width = 0.65
-# time_range = wave_graph.add_axes([0.15, 0.05, slider_width, 0.03]) # Slider visual dimensions
+# Slider
+num_graph_waves = 4 # Amount of waves to plot
+data_range = num_graph_waves*datapoints_per_wave # Resulting amount of data points to plot
+slider_width = 0.65
+time_range = wave_graph.add_axes([0.15, 0.05, slider_width, 0.03]) # Slider visual dimensions
 
 
-# # Generate wave lines
-# Bond_line, = Bond_ax.plot(time_data[:data_range]-time_start, Bond_height_data[:data_range], lw = 2, marker = '.', label = 'Bond')
-# noBond_line, = Bond_ax.plot(time_data[:data_range]-time_start, noBond_height_data[:data_range], lw = 2, marker = '.', label = 'noBond', color = 'green')
+# Generate wave lines
+Bond_line, = Bond_ax.plot(time_data[:data_range]-time_start, Bond_height_data[:data_range], lw = 2, marker = '.', label = 'Bond')
+noBond_line, = Bond_ax.plot(time_data[:data_range]-time_start, noBond_height_data[:data_range], lw = 2, marker = '.', label = 'noBond', color = 'green')
 
-# # Generate x axis label
-# Bond_ax.set_xlabel('Time (s)')
-# Bond_ax.legend() # Add legend
+# Generate x axis label
+Bond_ax.set_xlabel('Time (s)')
+Bond_ax.legend() # Add legend
 
-# # Plot readjustments to fit slider
-# wave_graph.subplots_adjust(left=0.15, bottom=0.2)
+# Plot readjustments to fit slider
+wave_graph.subplots_adjust(left=0.15, bottom=0.2)
 
-# time_slider = Slider(
-#     ax = time_range,
-#     label = 'Time (s)',
-#     valmin = 0,
-#     valmax = slider_width*100,
-#     valinit = 0,
-#     valstep = 1
-# )
+time_slider = Slider(
+    ax = time_range,
+    label = 'Time (s)',
+    valmin = 0,
+    valmax = slider_width*100,
+    valinit = 0,
+    valstep = 1
+)
 
-# # Initial limits of the graph
-# plt.xlim([0, data_range])
+# Initial limits of the graph
+plt.xlim([0, data_range])
 
-# # Update graph variables
-# def update_slider(val):
-#     # Slider mapping
-#     slider_pos = int(val*(len(time_data) - data_range -1)/(slider_width*100)) # Mapea el rango del slider a la posición del arreglo
+# Update graph variables
+def update_slider(val):
+    # Slider mapping
+    slider_pos = int(val*(len(time_data) - data_range -1)/(slider_width*100)) # Mapea el rango del slider a la posición del arreglo
     
-#     # Ajusta el lim del eje x para el nuevo valor del slider
-#     plt.subplot(111)
-#     plt.xlim([time_data[slider_pos]-time_start, time_data[slider_pos + data_range]-time_start]) 
+    # Ajusta el lim del eje x para el nuevo valor del slider
+    plt.subplot(111)
+    plt.xlim([time_data[slider_pos]-time_start, time_data[slider_pos + data_range]-time_start]) 
 
-#     # Da nuevos datos por graficar
-#     Bond_line.set_ydata(Bond_height_data[slider_pos:slider_pos + data_range])
-#     Bond_line.set_xdata(time_data[slider_pos:slider_pos + data_range]-time_start)
-#     noBond_line.set_ydata(noBond_height_data[slider_pos:slider_pos + data_range])
-#     noBond_line.set_xdata(time_data[slider_pos:slider_pos + data_range]-time_start)
+    # Da nuevos datos por graficar
+    Bond_line.set_ydata(Bond_height_data[slider_pos:slider_pos + data_range])
+    Bond_line.set_xdata(time_data[slider_pos:slider_pos + data_range]-time_start)
+    noBond_line.set_ydata(noBond_height_data[slider_pos:slider_pos + data_range])
+    noBond_line.set_xdata(time_data[slider_pos:slider_pos + data_range]-time_start)
 
-#     wave_graph.canvas.draw_idle()
+    wave_graph.canvas.draw_idle()
     
-# # Function to call on eahc slider change
-# time_slider.on_changed(update_slider)
+# Function to call on eahc slider change
+time_slider.on_changed(update_slider)
 
-# plt.show()
+if changing_data == False: plt.show()
 
