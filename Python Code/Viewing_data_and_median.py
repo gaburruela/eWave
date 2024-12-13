@@ -78,13 +78,17 @@ wavelength = []
 # Store averages and standard deviations - Using all past data
 # Peak-Peak
 noBond_pp_avg = 0
+noBond_pp_median = 0
 noBond_pp_stdev = 0
 Bond_pp_avg = 0
+Bond_pp_median = 0
 Bond_pp_stdev = 0
 # Frequency
 noBond_freq_avg = 0
+noBond_freq_median = 0
 noBond_freq_stdev = 0
 Bond_freq_avg = 0
+Bond_freq_median = 0
 Bond_freq_stdev = 0
 # Wavelength
 wavelength_avg = 0
@@ -160,7 +164,7 @@ def find_position_in_array(array):
     return -1  # Return -1 if no match is found
 
 # Redo variables
-file_pos = 13 # Pos inicial para iteracion de los datasets
+file_pos = 0 # Pos inicial para iteracion de los datasets
 filename = [['A','20b'],['A','22'],['A','24b'],['A','26'],['A','28'],['A','30'],['A','32c'],['A','34'],['A','36'],['A','38'],['A','40']
            ,['B','17'],['B','18'],['B','19'],['B','19.5'],['B','20'],['B','21'],['B','22'],['B','23'],['B','24'],['B','25'],['B','26'],['B','27'],['B','28'],['B','29b'],['B','30'],['B','31'],['B','32'],['B','33'],['B','34']
            ,['C','15'],['C','16'],['C','17'],['C','18'],['C','19'],['C','20'],['C','21'],['C','22'],['C','23'],['C','24'],['C','25'],['C','26b']
@@ -234,13 +238,17 @@ try:
         # Store averages and standard deviations - Using all past data
         # Peak-Peak
         noBond_pp_avg = 0
+        noBond_pp_median = 0
         noBond_pp_stdev = 0
         Bond_pp_avg = 0
+        Bond_pp_median = 0
         Bond_pp_stdev = 0
         # Frequency
         noBond_freq_avg = 0
+        noBond_freq_median = 0
         noBond_freq_stdev = 0
         Bond_freq_avg = 0
+        Bond_freq_median = 0
         Bond_freq_stdev = 0
         # Wavelength
         wavelength_avg = 0
@@ -442,28 +450,35 @@ try:
             noBond_measurements.append(noBond_height)
             time_csv.append(ttime)
         
+        # Median calculation
+        noBond_freq_median = np.median(noBond_freq)
+        Bond_freq_median = np.median(Bond_freq)
+
+        noBond_pp_median = np.median(noBond_pp)
+        Bond_pp_median = np.median(Bond_pp)
+        
         wavelength_median = np.median(wavelength)
 
         # Save results to csv file
         print('\nCheck results before saving: ')
-        print('noBond pp average:', noBond_pp_avg, 'and std: ', noBond_pp_stdev)
-        print('Bond pp average:', Bond_pp_avg, 'and std: ', Bond_pp_stdev)
-        print('noBond freq average:', noBond_freq_avg, 'and std: ', noBond_freq_stdev)
-        print('Bond freq average:', Bond_freq_avg, 'and std: ', Bond_freq_stdev)
-        print('Wavelength average:', wavelength_avg, 'median:', wavelength_median, 'std: ', wavelength_stdev)
+        print('noBond pp median:', noBond_pp_median, 'average:', noBond_pp_avg, 'and std: ', noBond_pp_stdev)
+        print('Bond pp median:', Bond_pp_median, 'average:', Bond_pp_avg, 'and std: ', Bond_pp_stdev)
+        print('noBond freq median:', noBond_freq_median, 'average:', noBond_freq_avg, 'and std: ', noBond_freq_stdev)
+        print('Bond freq median:', Bond_freq_median, ' average:', Bond_freq_avg, 'and std: ', Bond_freq_stdev)
+        print('Wavelength median:', wavelength_median, 'average:', wavelength_avg, 'std: ', wavelength_stdev)
 
         if changing_data == True:
-            results_file = open(csv_path + 'Results_with_median.csv', mode='a')
+            results_file = open(csv_path + 'All_results_with_median.csv', mode='a')
             # Name of the test
             crank_pos = filename[file_pos][0]
             motor_freq = filename[file_pos][1]
 
             results_file.write('\n' + crank_pos + ',' + motor_freq + ',')
             # Add the results
-            results_file.write(str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
-            results_file.write(str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
-            results_file.write(str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
-            results_file.write(str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
+            results_file.write(str(noBond_pp_median) + ',' + str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
+            results_file.write(str(Bond_pp_median) + ',' + str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
+            results_file.write(str(noBond_freq_median) + ',' + str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
+            results_file.write(str(Bond_freq_median) + ',' + str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
             results_file.write(str(wavelength_median) + ',' + str(wavelength_avg) + ',' + str(wavelength_stdev))
             results_file.close() 
         # print('\nDone with viewing data?') # Por alguna razon entra en panico si no
