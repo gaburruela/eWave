@@ -165,154 +165,159 @@ crest_flag = False
 
 max_measurements = len(x_data)
 
-try:
-    while pos_counter < max_measurements: # Usar esta linea cuando se usa el archivo de datasets
+with open(csv_filename, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    # Escribe los encabezados del archivo CSV
+    writer.writerow(["Time (s)", "Accel_x (m/s2)", "Accel_y (m/s2)", "Accel_z (m/s2)", "RPM", "Humidity (percentage)", "Amb_Temp (C)", "Water_Temp (C)", "Motor_Temp (C)", "noBond_height 1 (mm)", "Bond_height 2 (mm)"])
+    
+    try:
+        while pos_counter < max_measurements: # Usar esta linea cuando se usa el archivo de datasets
 
-        # Get time starting at zero
-        if time_start_flag == True:
-            time_start_flag = False
-            time_start = float(x_data[pos_counter])
+            # Get time starting at zero
+            if time_start_flag == True:
+                time_start_flag = False
+                time_start = float(x_data[pos_counter])
 
-        # If at any point the current time is less than the starting time reset everything
-        if float(x_data[pos_counter]) < time_start:
-            time_start = float(x_data[pos_counter])
-            noBond_first_wave = True
-            Bond_first_wave = True
-            noBond_half_period = []
-            noBond_wave_counter = 0
-            Bond_half_period = []
-            Bond_wave_counter = 0
-            noBond_pp = []
-            Bond_pp = []
-            noBond_freq = []
-            Bond_freq = []
-            wavelength = []
+            # If at any point the current time is less than the starting time reset everything
+            if float(x_data[pos_counter]) < time_start:
+                time_start = float(x_data[pos_counter])
+                noBond_first_wave = True
+                Bond_first_wave = True
+                noBond_half_period = []
+                noBond_wave_counter = 0
+                Bond_half_period = []
+                Bond_wave_counter = 0
+                noBond_pp = []
+                Bond_pp = []
+                noBond_freq = []
+                Bond_freq = []
+                wavelength = []
 
-        # Datasets file info
-        ttime = x_data[pos_counter] - time_start
-        Bond_height = y_data1[pos_counter]
-        noBond_height = y_data2[pos_counter]
-        
+            # Datasets file info
+            ttime = x_data[pos_counter] - time_start
+            Bond_height = y_data1[pos_counter]
+            noBond_height = y_data2[pos_counter]
+            
 
-        # NO BOND
-        # Not an empty array
-        if len(noBond_half_period) >= 1:
-            if noBond_anti_ripple != 0:
-                if noBond_anti_ripple > 2:
-                    noBond_anti_ripple = 0
-                else:
-                    noBond_anti_ripple += 1
-                
-            # New zero crossing found
-            if noBond_half_period[-1] * noBond_height < 0 and noBond_anti_ripple == 0:
-                noBond_anti_ripple += 1
-                # Ignore first wave
-                if noBond_first_wave == True:
-                    noBond_first_wave = False
-                    noBond_prev_time = ttime
-                    noBond_sign_cross = noBond_height
-                else:
-                    #print('No Bond Wave counter:', noBond_wave_counter)
-                    # Peak-Peak
-                    noBond_max_height, noBond_min_height = PP(noBond_half_period, noBond_max_height, noBond_min_height, noBond_pp)
+            # NO BOND
+            # Not an empty array
+            if len(noBond_half_period) >= 1:
+                if noBond_anti_ripple != 0:
+                    if noBond_anti_ripple > 2:
+                        noBond_anti_ripple = 0
+                    else:
+                        noBond_anti_ripple += 1
                     
-                    if len(noBond_pp) >= 2:
-                        noBond_pp_avg, noBond_pp_stdev = Stats(noBond_pp)
-                        #print('No Bond Peak-Peak:')
-                        #print('Average: ', noBond_pp_avg, ', Standard deviation: ', noBond_pp_stdev)
-
-                    # Frequency
-                    if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
-                        Freq(noBond_wave_counter, ttime, noBond_prev_time, noBond_freq)
+                # New zero crossing found
+                if noBond_half_period[-1] * noBond_height < 0 and noBond_anti_ripple == 0:
+                    noBond_anti_ripple += 1
+                    # Ignore first wave
+                    if noBond_first_wave == True:
+                        noBond_first_wave = False
                         noBond_prev_time = ttime
                         noBond_sign_cross = noBond_height
-
-                        if len(noBond_freq) >= 2:
-                            noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
-                            #print('No Bond Frequency:')
-                            #print('Average: ', noBond_freq_avg, ', Standard deviation: ', noBond_freq_stdev)
-
-                        # Wavelength calculations
-                        Wavelength(wavelength)
-                        #print('Wavelength:' , wavelength)
-
-                        if len(wavelength) >= 2:
-                            wavelength_avg, wavelength_stdev = Stats(wavelength)
-                            #print('Wavelength:')
-                            #print('Average: ', wavelength_avg, ', Standard deviation: ', wavelength_stdev)
-
-                        # Add the second half of wave to obtain full # of datapoints/wave
-                        datapoints_per_wave = temp_datapoints + len(noBond_half_period)
-                        # print('Length of full period:', datapoints_per_wave)
-
-
                     else:
-                        # Store the length of first half of wave
-                        temp_datapoints = len(noBond_half_period)
-                        # print('Length of first half period:', datapoints_per_wave)
+                        #print('No Bond Wave counter:', noBond_wave_counter)
+                        # Peak-Peak
+                        noBond_max_height, noBond_min_height = PP(noBond_half_period, noBond_max_height, noBond_min_height, noBond_pp)
+                        
+                        if len(noBond_pp) >= 2:
+                            noBond_pp_avg, noBond_pp_stdev = Stats(noBond_pp)
+                            #print('No Bond Peak-Peak:')
+                            #print('Average: ', noBond_pp_avg, ', Standard deviation: ', noBond_pp_stdev)
+
+                        # Frequency
+                        if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
+                            Freq(noBond_wave_counter, ttime, noBond_prev_time, noBond_freq)
+                            noBond_prev_time = ttime
+                            noBond_sign_cross = noBond_height
+
+                            if len(noBond_freq) >= 2:
+                                noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
+                                #print('No Bond Frequency:')
+                                #print('Average: ', noBond_freq_avg, ', Standard deviation: ', noBond_freq_stdev)
+
+                            # Wavelength calculations
+                            Wavelength(wavelength)
+                            #print('Wavelength:' , wavelength)
+
+                            if len(wavelength) >= 2:
+                                wavelength_avg, wavelength_stdev = Stats(wavelength)
+                                #print('Wavelength:')
+                                #print('Average: ', wavelength_avg, ', Standard deviation: ', wavelength_stdev)
+
+                            # Add the second half of wave to obtain full # of datapoints/wave
+                            datapoints_per_wave = temp_datapoints + len(noBond_half_period)
+                            # print('Length of full period:', datapoints_per_wave)
 
 
-                    # Update period counter
-                    noBond_wave_counter += 0.5
+                        else:
+                            # Store the length of first half of wave
+                            temp_datapoints = len(noBond_half_period)
+                            # print('Length of first half period:', datapoints_per_wave)
 
-                #print('\nNo Bond:\nHalf period: \n', noBond_half_period)
-                noBond_half_period = []
-        noBond_half_period.append(noBond_height)
 
-        # BOND
-        # Not an empty array
-        if len(Bond_half_period) >= 1:
-            if Bond_anti_ripple != 0:
-                if Bond_anti_ripple > 2:
-                    Bond_anti_ripple = 0
-                else:
-                    Bond_anti_ripple += 1
-            
-            # New zero crossing found
-            if Bond_half_period[-1] * Bond_height < 0 and Bond_anti_ripple == 0:
-                Bond_anti_ripple = 1
-                # Ignore first wave
-                if Bond_first_wave == True and noBond_first_wave == False:
-                    Bond_first_wave = False
-                    Bond_prev_time = ttime
-                else:
-                    #print('Bond Wave counter:', Bond_wave_counter)
-                    # Peak-Peak
-                    Bond_max_height, Bond_min_height = PP(Bond_half_period, Bond_max_height, Bond_min_height, Bond_pp)
-                    
-                    if len(Bond_pp) >= 2:
-                        Bond_pp_avg, Bond_pp_stdev = Stats(Bond_pp)
-                        #print('Bond Peak-Peak:')
-                        #print('Average: ', Bond_pp_avg, ', Standard deviation: ', Bond_pp_stdev)
+                        # Update period counter
+                        noBond_wave_counter += 0.5
 
-                    # Frequency
-                    if Bond_wave_counter % 1 == 0.5:
-                        Freq(Bond_wave_counter, ttime, Bond_prev_time, Bond_freq)
+                    #print('\nNo Bond:\nHalf period: \n', noBond_half_period)
+                    noBond_half_period = []
+            noBond_half_period.append(noBond_height)
+
+            # BOND
+            # Not an empty array
+            if len(Bond_half_period) >= 1:
+                if Bond_anti_ripple != 0:
+                    if Bond_anti_ripple > 2:
+                        Bond_anti_ripple = 0
+                    else:
+                        Bond_anti_ripple += 1
+                
+                # New zero crossing found
+                if Bond_half_period[-1] * Bond_height < 0 and Bond_anti_ripple == 0:
+                    Bond_anti_ripple = 1
+                    # Ignore first wave
+                    if Bond_first_wave == True and noBond_first_wave == False:
+                        Bond_first_wave = False
                         Bond_prev_time = ttime
-                        #print('Freq test: ', Bond_freq)
-                    
-                    # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
                     else:
-                        time_diff = ttime - noBond_prev_time
-                        Bond_sign_cross = Bond_height
-                    
-                    if len(Bond_freq) >= 2:
-                        Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)
-                        # print('Bond Frequency:')
-                        # print('Average: ', Bond_freq_avg, ', Standard deviation: ', Bond_freq_stdev)
-                    
-                    # Update period counter
-                    Bond_wave_counter += 0.5
+                        #print('Bond Wave counter:', Bond_wave_counter)
+                        # Peak-Peak
+                        Bond_max_height, Bond_min_height = PP(Bond_half_period, Bond_max_height, Bond_min_height, Bond_pp)
+                        
+                        if len(Bond_pp) >= 2:
+                            Bond_pp_avg, Bond_pp_stdev = Stats(Bond_pp)
+                            #print('Bond Peak-Peak:')
+                            #print('Average: ', Bond_pp_avg, ', Standard deviation: ', Bond_pp_stdev)
 
-                # print('\nBond:\nHalf period: \n', Bond_half_period)
-                Bond_half_period = []
+                        # Frequency
+                        if Bond_wave_counter % 1 == 0.5:
+                            Freq(Bond_wave_counter, ttime, Bond_prev_time, Bond_freq)
+                            Bond_prev_time = ttime
+                            #print('Freq test: ', Bond_freq)
+                        
+                        # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
+                        else:
+                            time_diff = ttime - noBond_prev_time
+                            Bond_sign_cross = Bond_height
+                        
+                        if len(Bond_freq) >= 2:
+                            Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)
+                            # print('Bond Frequency:')
+                            # print('Average: ', Bond_freq_avg, ', Standard deviation: ', Bond_freq_stdev)
+                        
+                        # Update period counter
+                        Bond_wave_counter += 0.5
 
-        Bond_half_period.append(Bond_height)
-        pos_counter += 1 # Only for dataset reviewing
+                    # print('\nBond:\nHalf period: \n', Bond_half_period)
+                    Bond_half_period = []
+
+            Bond_half_period.append(Bond_height)
+            pos_counter += 1 # Only for dataset reviewing
 
 
-except KeyboardInterrupt:
-    print("Deteniendo la lectura de datos.")
+    except KeyboardInterrupt:
+        print("Deteniendo la lectura de datos.")
 
 # print('Length of data:', len(x_data))
 
