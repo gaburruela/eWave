@@ -38,6 +38,7 @@ AngularVelocity_value = 0
 
 # Flags to ignore first wave
 noBond_first_wave = True
+noBond_second_sign_crossing = False
 Bond_first_wave = True
 
 # Flags to avoid multiple zero crossings
@@ -62,6 +63,7 @@ Bond_max_height = 0
 Bond_min_height = 0
 # Frequency
 noBond_prev_time = 0
+noBond_second_prev_time = 0
 Bond_prev_time = 0
 # Wavelength
 noBond_sign_cross = 0 # Just care about the sign
@@ -167,6 +169,7 @@ def find_position_in_array(array):
     return -1  # Return -1 if no match is found
 
 # Redo variables
+
 file_pos = 0 # Pos inicial para iteracion de los datasets
 filename = [['A','20b'],['A','22'],['A','24b'],['A','26'],['A','28'],['A','30'],['A','32c'],['A','34'],['A','36'],['A','38'],['A','40']
            ,['B','17'],['B','18'],['B','19'],['B','19.5'],['B','20'],['B','21'],['B','22'],['B','23'],['B','24'],['B','25'],['B','26'],['B','27'],['B','28'],['B','29b'],['B','30'],['B','31'],['B','32'],['B','33'],['B','34']
@@ -207,6 +210,7 @@ try:
         # Reset all parameters for new test
         # Flags to ignore first wave
         noBond_first_wave = True
+        noBond_second_sign_crossing = False
         Bond_first_wave = True
 
         # Flags to avoid multiple zero crossings
@@ -231,6 +235,7 @@ try:
         Bond_min_height = 0
         # Frequency
         noBond_prev_time = 0
+        noBond_second_prev_time = 0
         Bond_prev_time = 0
         # Wavelength
         noBond_sign_cross = 0 # Just care about the sign
@@ -288,6 +293,7 @@ try:
 
         # crests = int(input('Crests between sensors: '))
         crests = crest_for_file[file_pos]
+        print('Using # of crests:', crests)
         crest_flag = False
 
         max_measurements = len(time_data)
@@ -300,11 +306,12 @@ try:
             # Get time starting at zero
             if time_start_flag == True:
                 time_start_flag = False
-                time_start = float(time_data[0])
+                time_start = float(time_data[sim_counter])
 
             # If at any point the current time is less than the starting time reset everything
-            if float(time_data[0]) < time_start:
-                time_start = float(time_data[0])
+            if float(time_data[sim_counter]) < time_start:
+                print('time_data[sim_counter]', time_data[sim_counter], 'sim counter:' , sim_counter)
+                time_start = float(time_data[sim_counter])
                 noBond_first_wave = True
                 Bond_first_wave = True
                 noBond_half_period = []
@@ -316,6 +323,7 @@ try:
                 noBond_freq = []
                 Bond_freq = []
                 wavelength = []
+                print('Does a reset')
             
             # # Get serial data into variables (offset made with real measurements)
             # ttime = float(data[0]) - time_start
@@ -345,10 +353,13 @@ try:
                 if noBond_measurements[-1] * noBond_height < 0 and noBond_anti_ripple == 0 or noBond_height == 0:
                     noBond_anti_ripple += 1
                     # Ignore first wave
+                    
                     if noBond_first_wave == True:
+                        noBond_sign_cross = noBond_height
                         noBond_first_wave = False
                         noBond_prev_time = ttime
-                        noBond_sign_cross = noBond_height
+                        
+                        
                     else:
                         #print('No Bond Wave counter:', noBond_wave_counter)
                         # Peak-Peak
@@ -384,6 +395,18 @@ try:
                             # print('Length of full period:', datapoints_per_wave)
 
                         else:
+                            # noBond_second_prev_time = ttime
+                            # if noBond_second_sign_crossing == False and noBond_wave_counter == 0:
+                            #     noBond_second_sign_crossing = True
+                            # else:
+                            #     temp_period = 1/noBond_freq[-1]
+                            #     temp_percentage = second_time_diff/temp_period + (crests - 1)
+                            #     if second_time_diff == 0:
+                            #         wavelength[-1] = (wavelength[-1] + sensor_dist)/2
+                            #     else:
+                            #         wavelength[-1] = (wavelength[-1] + sensor_dist/temp_percentage)/2
+                                
+
                             # Store the length of first half of wave
                             temp_datapoints = len(noBond_half_period)
                             # print('Length of first half period:', datapoints_per_wave)
@@ -413,7 +436,10 @@ try:
                     Bond_sign_cross = Bond_height
                     if noBond_first_wave == False and Bond_sign_cross*noBond_sign_cross > 0:
                         time_diff = ttime - noBond_prev_time
-
+                            # print('Time diff calc, current measurement is closer to 0:', time_diff)
+                    # if noBond_first_wave == False and Bond_sign_cross*noBond_sign_cross < 0:
+                    #     second_time_diff = ttime - noBond_second_prev_time
+                        
                     Bond_anti_ripple = 1
                     # Ignore first wave
                     if Bond_first_wave == True:
@@ -485,17 +511,17 @@ try:
         print('Wavelength median:', wavelength_median, 'average:', wavelength_avg, 'std: ', wavelength_stdev)
 
         if changing_data == True:
-            results_file = open(csv_path + 'Reverted_code_trimmed_data.csv', mode='a')
+            results_file = open(csv_path + 'Dataset_trimming.csv', mode='a')
             # Name of the test
             crank_pos = filename[file_pos][0]
             motor_freq = filename[file_pos][1]
 
             results_file.write('\n' + crank_pos + ',' + motor_freq + ',')
             # Add the results
-            # results_file.write(str(noBond_pp_median) + ',' + str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
-            # results_file.write(str(Bond_pp_median) + ',' + str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
-            # results_file.write(str(noBond_freq_median) + ',' + str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
-            # results_file.write(str(Bond_freq_median) + ',' + str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
+            results_file.write(str(noBond_pp_median) + ',' + str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
+            results_file.write(str(Bond_pp_median) + ',' + str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
+            results_file.write(str(noBond_freq_median) + ',' + str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
+            results_file.write(str(Bond_freq_median) + ',' + str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
             results_file.write(str(wavelength_median) + ',' + str(wavelength_avg) + ',' + str(wavelength_stdev))
             results_file.close() 
         
