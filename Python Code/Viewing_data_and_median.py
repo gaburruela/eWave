@@ -133,11 +133,7 @@ def Wavelength(wavelength):
     # Add a full period per crest
     percentage = time_diff/period + (crests - 1)
 
-    # # Make sure phase is in sync - if not take away half a period
-    # if noBond_sign_cross * Bond_sign_cross < 0:
-    #     percentage -= 0.5
-
-    # if abs(percentage) > 0.001:
+    # Avoid divisions by 0 if time diff is 0
     if time_diff == 0:
         wavelength.append(sensor_dist)
     else:
@@ -184,18 +180,21 @@ def find_position_in_array(array):
 
 # Redo variables
 file_pos = 0 # Pos inicial para iteracion de los datasets
+# Todos los datasets definitivos, en orden alfabetico, para iterarar si se ocupa hacer cambios a todo
 filename = [['A','20b'],['A','22'],['A','24b'],['A','26'],['A','28'],['A','30'],['A','32c'],['A','34'],['A','36'],['A','38'],['A','40']
            ,['B','17'],['B','18'],['B','19'],['B','19.5'],['B','20'],['B','21'],['B','22'],['B','23'],['B','24'],['B','25'],['B','26'],['B','27'],['B','28'],['B','29b'],['B','30'],['B','31'],['B','32'],['B','33'],['B','34']
            ,['C','15'],['C','16'],['C','17'],['C','18'],['C','19'],['C','20'],['C','21'],['C','22'],['C','23'],['C','24'],['C','25'],['C','26b']
            ,['D','14'],['D','15'],['D','18'],['D','20'],['D','22'],['D','25']
            ,['E','15'],['E','18'],['E','19'],['E','20'],['E','23']]
 
+# Numero de crestas para cada archivo, para evitar poner los datos manualmente
 crest_for_file = [1,1,1,1,1,1,1,2,2,2,2
          ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2
          ,1,1,1,1,1,1,1,1,1,1,1,1
          ,1,1,1,1,1,1
          ,1,1,1,1,1]
 
+# Para evitar guardar datos si solo se desea observar la onda
 changing_data = True
 view_only_one = 0
 if(input('Desea observar un unico archivo? (y/n):') == 'y'):
@@ -361,10 +360,14 @@ try:
                 if noBond_measurements[-1] * noBond_height < 0 and noBond_anti_ripple == 0 or noBond_height == 0:
                     noBond_anti_ripple += 1
                     # Ignore first wave
-                    if noBond_first_wave == True:
+                    if noBond_first_wave == True and noBond_height > 0: # To start meassuring data on neg to pos waves
                         noBond_first_wave = False
-                        noBond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,noBond_height,noBond_height_data,time_start)
                         noBond_sign_cross = noBond_height
+
+                        # Comentar el llamado a la funcion si se prefiere no usar la interpolacion, y usar solo ttime
+                        noBond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,noBond_height,noBond_height_data,time_start)
+                        # noBond_prev_time = ttime
+                        
                     else:
                         #print('No Bond Wave counter:', noBond_wave_counter)
                         # Peak-Peak
@@ -378,8 +381,12 @@ try:
                         # Frequency
                         if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
                             Freq(noBond_wave_counter, ttime, noBond_prev_time, noBond_freq)
-                            noBond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,noBond_height,noBond_height_data,time_start)
                             noBond_sign_cross = noBond_height
+
+                            # Comentar el llamado a la funcion si se prefiere no usar la interpolacion, y usar solo ttime
+                            noBond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,noBond_height,noBond_height_data,time_start)
+                            # noBond_prev_time = ttime
+                            
 
                             if len(noBond_freq) >= 2:
                                 noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
@@ -409,6 +416,7 @@ try:
 
                     #print('\nNo Bond:\nHalf period: \n', noBond_half_period)
                     noBond_half_period = []
+            
             # Only add a measurement every 3 measurements
             if amplitude_flag == 0:
                 noBond_half_period.append(noBond_height)
@@ -426,16 +434,20 @@ try:
                 if Bond_measurements[-1] * Bond_height < 0 and Bond_anti_ripple == 0 or Bond_height == 0:
 
                     # New wavelength calculation
+                    # Calculates the time diff only if sign crossing matches that of the noBond sign cross that calculated the prev time
                     Bond_sign_cross = Bond_height
                     if noBond_first_wave == False and Bond_sign_cross*noBond_sign_cross > 0:
                         time_diff = ttime - noBond_prev_time
 
                     Bond_anti_ripple = 1
                     # Ignore first wave
-                    if Bond_first_wave == True:
+                    if Bond_first_wave == True and Bond_height > 0: # To start meassuring data on neg to pos waves
                         if noBond_first_wave == False: # No Bond should already be done with its first wave
                             Bond_first_wave = False
+
+                            # Comentar el llamado a la funcion si se prefiere no usar la interpolacion, y usar solo ttime
                             Bond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,Bond_height,Bond_height_data,time_start)
+                            # Bond_prev_time = ttime
                             
                     else:
                         #print('Bond Wave counter:', Bond_wave_counter)
@@ -450,13 +462,10 @@ try:
                         # Frequency
                         if Bond_wave_counter % 1 == 0.5:
                             Freq(Bond_wave_counter, ttime, Bond_prev_time, Bond_freq)
+
+                            # Comentar el llamado a la funcion si se prefiere no usar la interpolacion, y usar solo ttime
                             Bond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,Bond_height,Bond_height_data,time_start)
-                            #print('Freq test: ', Bond_freq)
-                        
-                        # # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
-                        # else:
-                        #     time_diff = ttime - noBond_prev_time
-                        #     Bond_sign_cross = Bond_height
+                            # Bond_prev_time = ttime
                         
                         if len(Bond_freq) >= 2:
                             Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)
@@ -502,7 +511,7 @@ try:
         print('Wavelength median:', wavelength_median, 'average:', wavelength_avg, 'std: ', wavelength_stdev)
 
         if changing_data == True:
-            results_file = open(csv_path + 'Interpolation.csv', mode='a')
+            results_file = open(csv_path + 'Neg2pos_interpol.csv', mode='a')
             # Name of the test
             crank_pos = filename[file_pos][0]
             motor_freq = filename[file_pos][1]
