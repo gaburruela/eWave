@@ -129,18 +129,24 @@ def Wavelength(wavelength):
     # Add a full period per crest
     percentage = time_diff/period + (crests - 1)
 
-    # # Make sure phase is in sync - if not take away half a period
-    # if noBond_sign_cross * Bond_sign_cross < 0:
-    #     percentage -= 0.5
-
-    # if abs(percentage) > 0.001:
     if time_diff == 0:
         wavelength.append(sensor_dist)
     else:
         wavelength.append(sensor_dist/percentage)
-    
-    # print('Wavelength:', wavelength)
-    print('Time diff used:', time_diff, 'noBond Period:', period)
+
+def Zero_cross_interpol(curr_time,time_data,pos,curr_height,height_array,time_start):
+    # print('Time:', curr_time, 'sim counter:', pos, 'Current height:', curr_height)
+    real_time = 0
+    if height_array[pos-1] == 0: real_time = float(time_data[pos-1] - time_start)
+    else:
+        y1 = float(height_array[pos-1])
+        y2 = float(curr_height)
+        t1 = float(time_data[pos-1] - time_start)
+        t2 = float(curr_time)
+        real_time = float(t1 + abs(y1)/(abs(y1) + abs(y2))*(t2 - t1))
+        # print('y1:', y1, 'y2:', y2, 't1:', t1, 't2:', t2) 
+    # print('real time:', real_time) 
+    return real_time
 
 
 def Stats(var):
@@ -233,10 +239,13 @@ try:
             if noBond_measurements[-1] * noBond_height < 0 and noBond_anti_ripple == 0 or noBond_height == 0:
                 noBond_anti_ripple += 1
                 # Ignore first wave
-                if noBond_first_wave == True:
+                if noBond_first_wave == True and noBond_height > 0: # To start meassuring data on neg to pos waves
                     noBond_first_wave = False
-                    noBond_prev_time = ttime
                     noBond_sign_cross = noBond_height
+
+                    # Comentar el llamado a la funcion si se prefiere no usar la interpolacion, y usar solo ttime
+                    noBond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,noBond_height,noBond_height_data,time_start)
+                    # noBond_prev_time = ttime
                 else:
                     #print('No Bond Wave counter:', noBond_wave_counter)
                     # Peak-Peak
@@ -250,8 +259,11 @@ try:
                     # Frequency
                     if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
                         Freq(noBond_wave_counter, ttime, noBond_prev_time, noBond_freq)
-                        noBond_prev_time = ttime
                         noBond_sign_cross = noBond_height
+                        
+                        # Comentar el llamado a la funcion si se prefiere no usar la interpolacion, y usar solo ttime
+                        noBond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,noBond_height,noBond_height_data,time_start)
+                        # noBond_prev_time = ttime
 
                         if len(noBond_freq) >= 2:
                             noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
@@ -297,18 +309,22 @@ try:
             # New zero crossing found
             if Bond_measurements[-1] * Bond_height < 0 and Bond_anti_ripple == 0 or Bond_height == 0:
                 Bond_anti_ripple = 1
+                Bond_sign_cross = Bond_height
                 
                 # New wavelength calculation
-                Bond_sign_cross = Bond_height
+                # Calculates the time diff only if sign crossing matches that of the noBond sign cross that calculated the prev time
                 if noBond_first_wave == False and Bond_sign_cross*noBond_sign_cross > 0:
                     time_diff = ttime - noBond_prev_time
 
                 
                 # Ignore first wave
                 if Bond_first_wave == True:
-                    if noBond_first_wave == False: # No Bond should already be done with its first wave
+                    if noBond_first_wave == False and Bond_sign_cross*noBond_sign_cross > 0:
                         Bond_first_wave = False
-                        Bond_prev_time = ttime
+
+                        # Comentar el llamado a la funcion si se prefiere no usar la interpolacion, y usar solo ttime
+                        Bond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,Bond_height,Bond_height_data,time_start)
+                        # Bond_prev_time = ttime
                 else:
                     #print('Bond Wave counter:', Bond_wave_counter)
                     # Peak-Peak
@@ -322,7 +338,10 @@ try:
                     # Frequency
                     if Bond_wave_counter % 1 == 0.5:
                         Freq(Bond_wave_counter, ttime, Bond_prev_time, Bond_freq)
-                        Bond_prev_time = ttime
+
+                        # Comentar el llamado a la funcion si se prefiere no usar la interpolacion, y usar solo ttime
+                        Bond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,Bond_height,Bond_height_data,time_start)
+                        # Bond_prev_time = ttime
                         #print('Freq test: ', Bond_freq)
                     
                     # # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
@@ -364,7 +383,21 @@ try:
 except KeyboardInterrupt:
     print("Deteniendo la lectura de datos.")
 
-print('Resulting wavelenght:', wavelength_avg, 'Wavelength median:', wavelength_median)
+# Median calculation
+noBond_freq_median = np.median(noBond_freq)
+Bond_freq_median = np.median(Bond_freq)
+
+noBond_pp_median = np.median(noBond_pp)
+Bond_pp_median = np.median(Bond_pp)
+
+wavelength_median = np.median(wavelength)
+
+print('\nResults:: ')
+print('noBond pp median:', noBond_pp_median, 'average:', noBond_pp_avg, 'and std: ', noBond_pp_stdev)
+print('Bond pp median:', Bond_pp_median, 'average:', Bond_pp_avg, 'and std: ', Bond_pp_stdev)
+print('noBond freq median:', noBond_freq_median, 'average:', noBond_freq_avg, 'and std: ', noBond_freq_stdev)
+print('Bond freq median:', Bond_freq_median, ' average:', Bond_freq_avg, 'and std: ', Bond_freq_stdev)
+print('Wavelength median:', wavelength_median, 'average:', wavelength_avg, 'std: ', wavelength_stdev)
 
 
 # # Correct for wrong number of crests - ALWAYS MAKE CORR POSITIVE

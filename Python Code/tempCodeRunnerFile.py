@@ -1,1 +1,2 @@
-ttime
+# Comentar el llamado a la funcion si se prefiere no usar la interpolacion, y usar solo ttime
+                            Bond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,Bond_height,Bond_height_data,time_start)
