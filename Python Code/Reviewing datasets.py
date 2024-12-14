@@ -140,7 +140,7 @@ def Wavelength(wavelength):
         wavelength.append(sensor_dist/percentage)
     
     # print('Wavelength:', wavelength)
-    print('Time diff used:', time_diff, 'Period:', period)
+    print('Time diff used:', time_diff, 'noBond Period:', period)
 
 
 def Stats(var):
@@ -185,11 +185,12 @@ try:
         # Get time starting at zero
         if time_start_flag == True:
             time_start_flag = False
-            time_start = float(time_data[0])
+            time_start = float(time_data[sim_counter])
+            
 
         # If at any point the current time is less than the starting time reset everything
-        if float(time_data[0]) < time_start:
-            time_start = float(time_data[0])
+        if float(time_data[sim_counter]) < time_start:
+            time_start = float(time_data[sim_counter])
             noBond_first_wave = True
             Bond_first_wave = True
             noBond_half_period = []
@@ -201,6 +202,8 @@ try:
             noBond_freq = []
             Bond_freq = []
             wavelength = []
+            
+            
         
         # # Get serial data into variables (offset made with real measurements)
         # ttime = float(data[0]) - time_start
@@ -381,7 +384,7 @@ wave_graph = plt.figure()
 Bond_ax = wave_graph.add_subplot(111)
 
 # Slider
-num_graph_waves = 4 # Amount of waves to plot
+num_graph_waves = 8 # Amount of waves to plot
 data_range = num_graph_waves*datapoints_per_wave # Resulting amount of data points to plot
 slider_width = 0.65
 time_range = wave_graph.add_axes([0.15, 0.05, slider_width, 0.03]) # Slider visual dimensions

@@ -167,12 +167,19 @@ def find_position_in_array(array):
     return -1  # Return -1 if no match is found
 
 # Redo variables
-file_pos = 6 # Pos inicial para iteracion de los datasets
+
+file_pos = 0 # Pos inicial para iteracion de los datasets
 filename = [['A','20b'],['A','22'],['A','24b'],['A','26'],['A','28'],['A','30'],['A','32c'],['A','34'],['A','36'],['A','38'],['A','40']
            ,['B','17'],['B','18'],['B','19'],['B','19.5'],['B','20'],['B','21'],['B','22'],['B','23'],['B','24'],['B','25'],['B','26'],['B','27'],['B','28'],['B','29b'],['B','30'],['B','31'],['B','32'],['B','33'],['B','34']
            ,['C','15'],['C','16'],['C','17'],['C','18'],['C','19'],['C','20'],['C','21'],['C','22'],['C','23'],['C','24'],['C','25'],['C','26b']
            ,['D','14'],['D','15'],['D','18'],['D','20'],['D','22'],['D','25']
            ,['E','15'],['E','18'],['E','19'],['E','20'],['E','23']]
+
+crest_for_file = [1,1,1,1,1,1,1,2,2,2,2
+         ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2
+         ,1,1,1,1,1,1,1,1,1,1,1,1
+         ,1,1,1,1,1,1
+         ,1,1,1,1,1]
 
 changing_data = True
 view_only_one = 0
@@ -280,7 +287,9 @@ try:
 
         sim_counter = 0
 
-        crests = int(input('Crests between sensors: '))
+        # crests = int(input('Crests between sensors: '))
+        crests = crest_for_file[file_pos]
+        print('Using # of crests:', crests)
         crest_flag = False
 
         max_measurements = len(time_data)
@@ -293,11 +302,11 @@ try:
             # Get time starting at zero
             if time_start_flag == True:
                 time_start_flag = False
-                time_start = float(time_data[0])
+                time_start = float(time_data[sim_counter])
 
             # If at any point the current time is less than the starting time reset everything
-            if float(time_data[0]) < time_start:
-                time_start = float(time_data[0])
+            if float(time_data[sim_counter]) < time_start:
+                time_start = float(time_data[sim_counter])
                 noBond_first_wave = True
                 Bond_first_wave = True
                 noBond_half_period = []
@@ -406,7 +415,8 @@ try:
                     Bond_sign_cross = Bond_height
                     if noBond_first_wave == False and Bond_sign_cross*noBond_sign_cross > 0:
                         time_diff = ttime - noBond_prev_time
-
+                            # print('Time diff calc, current measurement is closer to 0:', time_diff)
+                        
                     Bond_anti_ripple = 1
                     # Ignore first wave
                     if Bond_first_wave == True:
@@ -478,7 +488,7 @@ try:
         print('Wavelength median:', wavelength_median, 'average:', wavelength_avg, 'std: ', wavelength_stdev)
 
         if changing_data == True:
-            results_file = open(csv_path + 'New_wavelengths.csv', mode='a')
+            results_file = open(csv_path + 'Time_start_adjust.csv', mode='a')
             # Name of the test
             crank_pos = filename[file_pos][0]
             motor_freq = filename[file_pos][1]
