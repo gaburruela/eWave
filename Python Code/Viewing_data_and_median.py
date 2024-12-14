@@ -151,6 +151,20 @@ def Stats(var):
 
     return avg, stdev
 
+def Zero_cross_interpol(curr_time,time_data,pos,curr_height,height_array,time_start):
+    # print('Time:', curr_time, 'sim counter:', pos, 'Current height:', curr_height)
+    real_time = 0
+    if height_array[pos-1] == 0: real_time = float(time_data[pos-1] - time_start)
+    else:
+        y1 = float(height_array[pos-1])
+        y2 = float(curr_height)
+        t1 = float(time_data[pos-1] - time_start)
+        t2 = float(curr_time)
+        real_time = float(t1 + abs(y1)/(abs(y1) + abs(y2))*(t2 - t1))
+        # print('y1:', y1, 'y2:', y2, 't1:', t1, 't2:', t2) 
+    # print('real time:', real_time) 
+    return real_time
+
 
 def find_position_in_array(array):
     # Get the position and frequency from the user
@@ -165,6 +179,8 @@ def find_position_in_array(array):
     
     print("No match found in the array.")
     return -1  # Return -1 if no match is found
+
+
 
 # Redo variables
 file_pos = 0 # Pos inicial para iteracion de los datasets
@@ -347,7 +363,7 @@ try:
                     # Ignore first wave
                     if noBond_first_wave == True:
                         noBond_first_wave = False
-                        noBond_prev_time = ttime
+                        noBond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,noBond_height,noBond_height_data,time_start)
                         noBond_sign_cross = noBond_height
                     else:
                         #print('No Bond Wave counter:', noBond_wave_counter)
@@ -362,7 +378,7 @@ try:
                         # Frequency
                         if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
                             Freq(noBond_wave_counter, ttime, noBond_prev_time, noBond_freq)
-                            noBond_prev_time = ttime
+                            noBond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,noBond_height,noBond_height_data,time_start)
                             noBond_sign_cross = noBond_height
 
                             if len(noBond_freq) >= 2:
@@ -419,7 +435,8 @@ try:
                     if Bond_first_wave == True:
                         if noBond_first_wave == False: # No Bond should already be done with its first wave
                             Bond_first_wave = False
-                            Bond_prev_time = ttime
+                            Bond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,Bond_height,Bond_height_data,time_start)
+                            
                     else:
                         #print('Bond Wave counter:', Bond_wave_counter)
                         # Peak-Peak
@@ -433,7 +450,7 @@ try:
                         # Frequency
                         if Bond_wave_counter % 1 == 0.5:
                             Freq(Bond_wave_counter, ttime, Bond_prev_time, Bond_freq)
-                            Bond_prev_time = ttime
+                            Bond_prev_time = Zero_cross_interpol(ttime,time_data,sim_counter,Bond_height,Bond_height_data,time_start)
                             #print('Freq test: ', Bond_freq)
                         
                         # # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
@@ -485,17 +502,17 @@ try:
         print('Wavelength median:', wavelength_median, 'average:', wavelength_avg, 'std: ', wavelength_stdev)
 
         if changing_data == True:
-            results_file = open(csv_path + 'Reverted_code_trimmed_data.csv', mode='a')
+            results_file = open(csv_path + 'Interpolation.csv', mode='a')
             # Name of the test
             crank_pos = filename[file_pos][0]
             motor_freq = filename[file_pos][1]
 
             results_file.write('\n' + crank_pos + ',' + motor_freq + ',')
             # Add the results
-            # results_file.write(str(noBond_pp_median) + ',' + str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
-            # results_file.write(str(Bond_pp_median) + ',' + str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
-            # results_file.write(str(noBond_freq_median) + ',' + str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
-            # results_file.write(str(Bond_freq_median) + ',' + str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
+            results_file.write(str(noBond_pp_median) + ',' + str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
+            results_file.write(str(Bond_pp_median) + ',' + str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
+            results_file.write(str(noBond_freq_median) + ',' + str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
+            results_file.write(str(Bond_freq_median) + ',' + str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
             results_file.write(str(wavelength_median) + ',' + str(wavelength_avg) + ',' + str(wavelength_stdev))
             results_file.close() 
         
