@@ -11,19 +11,21 @@ unsigned long millis_current;
 const long time_interval = 40; // Around 40 Hz (jk)
 
 // Define sensor pins
-const int s1 = A5; // Not Bond
-const int s2 = A4; // Bond
+const int s1 = A3; // Not Bond
+const int s2 = A2; // Bond
 
 // Sensor 1 variables
 float s1_voltage;
 float s1_distance_avg = 0;
 float s1_distance_calibrated = 0;
 float s1_zero_lvl = 0;
+int s1_distance_int;
 // Sensor 2 variables
 float s2_voltage;
 float s2_distance_avg = 0;
 float s2_distance_calibrated = 0;
 float s2_zero_lvl = 0;
+int s2_distance_int;
 
 // Manual mapping
 // Not Bond
@@ -39,11 +41,11 @@ const float s2_max_Dist = 990;
 
 // Parámetros de calibración - Revisar Excel
 // Not Bond
-const float s1_slope = 0.998825735;
-const float s1_intercept = 2.344994118;
+const float s1_slope = 0.994539706;
+const float s1_intercept = -0.09645;
 // Bond
-const float s2_slope = 1.020507353;
-const float s2_intercept = -2.293051471;
+const float s2_slope = 1.016928676;
+const float s2_intercept = -6.587792647;
 
 
 // Manual mapping - get decimals - sensor is just which of the 2 sensors we're mapping
@@ -114,14 +116,18 @@ void loop() {
     s1_distance_calibrated = s1_distance_avg * s1_slope + s1_intercept;
     s2_distance_calibrated = s2_distance_avg * s2_slope + s2_intercept;
 
+    // Rounding
+    s1_distance_int = round(s1_distance_calibrated - s1_zero_lvl);
+    s2_distance_int = round(s2_distance_calibrated - s2_zero_lvl);
+
 
     // Print results to csv - With filter for if it turns off
     if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
       Serial.print(float(millis_current) / 1000); // Time in seconds
       Serial.print(",");
-      Serial.print(s1_distance_calibrated - s1_zero_lvl);
+      Serial.print(s1_distance_int);
       Serial.print(",");
-      Serial.println(s2_distance_calibrated - s2_zero_lvl);
+      Serial.println(s2_distance_int);
     }
   }
 }

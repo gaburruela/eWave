@@ -15,7 +15,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # SERIAL COMMUNICATION
 
-port = 'COM10'  # COM9 para Andrés / COM10 para Daniel
+port = 'COM3'  # COM9 para Andrés / COM10 (o COM3) para Daniel
 baudrate = 115200
 
 
@@ -38,7 +38,7 @@ if input('Are you sure? (y/n): ') == 'n':
 
 print('\nReady to start measurements!')
 
-csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
+csv_path = r'C:\Users\Daniel Q\Documents\TEC\2025 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
 #csv_path = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\\' # Para Andrés
 #csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
 
@@ -372,6 +372,7 @@ def Update_graphs():
                 if ser.in_waiting > 0:
                     # Read serial port string
                     line = ser.readline().decode('utf-8').strip()
+                    print(line)
                     # Split the whole serial string into values
                     data = line.split(',')
 

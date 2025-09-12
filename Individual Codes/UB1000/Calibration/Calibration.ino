@@ -11,6 +11,8 @@ float s1_distance_avg = 0;
 float s2_distance_avg = 0;
 float s1_distance_calibrated = 0;
 float s2_distance_calibrated = 0;
+int s1_distance_int;
+int s2_distance_int;
 
 // Manual mapping No Bond -> NOT UPDATED
 float s1_min_Volt = 176;
@@ -51,12 +53,12 @@ void loop() {
   s2_distance_avg = s2_distance_avg / num_med; // Saca el promedio
 
   // Calibración hecha en el excel: NotBond
-  //s1_distance_calibrated = (s1_distance_avg - 2.344994118) / 0.998825735 - 436;
-  Serial.println(s1_distance_avg);
-  //Serial.println(s1_distance_calibrated);
+  s1_distance_calibrated = (s1_distance_avg + 0.09645) / 0.994539706;
+  s1_distance_int = round(s1_distance_calibrated); // Redondea a int
+  Serial.println(s1_distance_int);
 
   // Calibración hecha en el excel: Bond
-  //s2_distance_calibrated = (s2_distance_avg + 2.293051471) / 1.020507353 - 435;
-  Serial.println(s2_distance_avg);
-  //Serial.println(s2_distance_calibrated);
+  s2_distance_calibrated = (s2_distance_avg + 6.587792647) / 1.016928676;
+  s2_distance_int = round(s2_distance_calibrated); // Redondea a int
+  Serial.println(s2_distance_int);
 }

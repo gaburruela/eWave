@@ -120,11 +120,11 @@ const float s2_max_Dist = 967;
 
 // Parámetros de calibración - Revisar Excel
 // Not Bond
-const float s1_slope = 1;
-const float s1_intercept = -1.5;
+const float s1_slope = 0.994539706;
+const float s1_intercept = -0.09645;
 // Bond
-const float s2_slope = 1;
-const float s2_intercept = -1.5;
+const float s2_slope = 1.016928676;
+const float s2_intercept = -6.587792647;
 
 
 // EXTERNAL FUNCTIONS
