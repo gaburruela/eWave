@@ -8,6 +8,7 @@
 float V_ref = 5; //Voltaje del Arduino
 
 //DATOS DEL TERMISTOR WATER
+
 float R_1_W = 5200; //Resistencia fija
 float V_O_W; //Tensión de salida - Medición
 float R_T_W; //Resistencia variable del termistor - Cálculo
@@ -17,7 +18,7 @@ int SensorValue_W; //Entrada analógica del Arduino
 float T_W; //Temperatura medida - Cálculo
 
 //Parámetros del termistor - Beta model
-float R0_W = 10000; // [Ω]
+float R0_W = 9800; // [Ω]
 float T0_W = 298.15; // [K]
 float B_W = 3435; // [K]
 

@@ -38,8 +38,8 @@ if input('Are you sure? (y/n): ') == 'n':
 
 print('\nReady to start measurements!')
 
-csv_path = r'C:\Users\Daniel Q\Documents\TEC\2025 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
-#csv_path = r'C:\Users\Lenovo\Documents\eWave\eWave\Datasets\\' # Para Andrés
+#csv_path = r'C:\Users\Daniel Q\Documents\TEC\2025 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
+csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\\' # Para Andrés
 #csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
 
 csv_filename = csv_path + crank_pos + str(motor_freq) + '.csv'
@@ -51,8 +51,8 @@ time.sleep(2)
 # GENERAL VARIABLES
 
 # Wave variables
-max_waves = 100
-graph_max = 50 # Data points, not waves
+max_waves = 300
+graph_max = 100 # Data points, not waves
 
 # Graph variables
 time_csv = []
