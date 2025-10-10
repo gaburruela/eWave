@@ -29,12 +29,12 @@ except serial.SerialException as e:
     exit()
 
 # Nombre del archivo CSV
-crank_pos = input('Crank Position: ')
-motor_freq = input('Motor Frequency (Hz): ')
+crank_pos = input('Crank Position: ') + " mm - "
+motor_freq = input('Motor Frequency (Hz): ') + " Hz"
 
 if input('Are you sure? (y/n): ') == 'n':
-    crank_pos = input('Crank Position: ')
-    motor_freq = input('Motor Frequency (Hz): ')
+    crank_pos = input('Crank Position: ') + " mm - "
+    motor_freq = input('Motor Frequency (Hz): ') + " Hz"
 
 print('\nReady to start measurements!')
 
@@ -42,7 +42,7 @@ print('\nReady to start measurements!')
 csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\\' # Para Andrés
 #csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
 
-csv_filename = csv_path + crank_pos + str(motor_freq) + '.csv'
+csv_filename = csv_path + crank_pos + motor_freq + '.csv'
 
 # Espera unos segundos para asegurarse de que la conexión esté establecida
 time.sleep(2)
@@ -51,7 +51,7 @@ time.sleep(2)
 # GENERAL VARIABLES
 
 # Wave variables
-max_waves = 300
+max_waves = 120
 graph_max = 100 # Data points, not waves
 
 # Graph variables
@@ -129,9 +129,9 @@ crest_flag = True
 crests = 0
 
 # Others
-noBond_real_zero = 427
-Bond_real_zero = 427
-anti_ripple = 2
+noBond_real_zero = 465 # measured height at zero
+Bond_real_zero = 495
+anti_ripple = 2 # crests to ignore
 
 # INTERFACE ANTESALA
 window = tk.Tk() # The main Tkinter window
@@ -372,7 +372,7 @@ def Update_graphs():
                 if ser.in_waiting > 0:
                     # Read serial port string
                     line = ser.readline().decode('utf-8').strip()
-                    print(line)
+                    #print(line)
                     # Split the whole serial string into values
                     data = line.split(',')
 
@@ -412,11 +412,11 @@ def Update_graphs():
                         
                         # Get serial data into variables (offset made with real measurements)
                         ttime = float(data[0]) - time_start
-                        noBond_height = float(data[9])
-                        Bond_height = float(data[10])
+                        # noBond_height = float(data[9])
+                        # Bond_height = float(data[10])
                         
-                        #noBond_height = float(data[9]) + noBond_offset
-                        #Bond_height = float(data[10]) + Bond_offset
+                        noBond_height = float(data[9]) - noBond_offset
+                        Bond_height = float(data[10]) - Bond_offset
                         
                         # Update tkinter window
                         Humidity_value = (float(data[5]))
