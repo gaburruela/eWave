@@ -51,14 +51,16 @@ void loop() {
   
   s1_distance_avg = s1_distance_avg / num_med; // Saca el promedio
   s2_distance_avg = s2_distance_avg / num_med; // Saca el promedio
+  //Serial.println(s2_distance_avg);
 
   // Calibración hecha en el excel: NotBond
-  s1_distance_calibrated = (s1_distance_avg + 0.09645) / 0.994539706;
-  s1_distance_int = round(s1_distance_calibrated); // Redondea a int
-  Serial.println(s1_distance_int);
+  s1_distance_calibrated = (s1_distance_avg + 2.210294118) / 1.022794118;
+  // s1_distance_int = round(s1_distance_calibrated); // Redondea a int
+  // Serial.println(s1_distance_int);
+
 
   // Calibración hecha en el excel: Bond
-  s2_distance_calibrated = (s2_distance_avg + 6.587792647) / 1.016928676;
+  s2_distance_calibrated = (s2_distance_avg + 1.66541176) / 1.031985294;
   s2_distance_int = round(s2_distance_calibrated); // Redondea a int
   Serial.println(s2_distance_int);
 }

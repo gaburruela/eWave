@@ -93,7 +93,7 @@ const long time_interval = 40; // Around 40
 // Define sensor pins
 const int s1 = A3; // Not Bond
 const int s2 = A2; // Bond
-const int sync = 7;
+const int sync = 7; // unused
 
 // Sensor 1 variables
 float s1_voltage;
@@ -120,11 +120,11 @@ const float s2_max_Dist = 967;
 
 // Parámetros de calibración - Revisar Excel
 // Not Bond
-const float s1_slope = 0.994539706;
-const float s1_intercept = -0.09645;
+const float s1_slope = 1.022794118;
+const float s1_intercept = -2.210294118;
 // Bond
-const float s2_slope = 1.016928676;
-const float s2_intercept = -6.587792647;
+const float s2_slope = 1.031985294;
+const float s2_intercept = -1.66541176;
 
 
 // EXTERNAL FUNCTIONS
@@ -327,9 +327,9 @@ void Print_Results() {
   
   // Ultrasonics
   Serial.println("Height (mm) s1, s2");
-  Serial.print(s1_distance_calibrated - s1_zero_lvl);
+  Serial.print(s1_zero_lvl - s1_distance_calibrated);
   Serial.print(",");
-  Serial.println(s2_distance_calibrated - s2_zero_lvl);
+  Serial.println(s2_zero_lvl - s2_distance_calibrated);
 }
 
 void CSV_Results() {

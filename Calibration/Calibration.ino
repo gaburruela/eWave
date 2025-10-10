@@ -2,74 +2,63 @@
 
 const int sensor1 = A3; // No Bond
 const int sensor2 = A2; // Bond
-const int sync = 7;
-const int num_med = 169; //nice
+const int num_med = 1; //nice
 
-float noBond_voltage;
-float Bond_voltage;
+float s1_voltage;
+float s2_voltage;
 float distance;
-float noBond_distance_avg = 0;
-float Bond_distance_avg = 0;
-float noBond_distance_calibrated = 0;
-float Bond_distance_calibrated = 0;
+float s1_distance_avg = 0;
+float s2_distance_avg = 0;
+float s1_distance_calibrated = 0;
+float s2_distance_calibrated = 0;
+int s1_distance_int;
+int s2_distance_int;
 
-// Manual mapping No Bond -> UPDATED
-float noBond_min_Volt = 175;
-float noBond_max_Volt = 883;
-float noBond_min_Dist = 88;
-float noBond_max_Dist = 973;
+// Manual mapping No Bond -> NOT UPDATED
+float s1_min_Volt = 176;
+float s1_max_Volt = 887;
+float s1_min_Dist = 89;
+float s1_max_Dist = 983;
 
-// Manual mapping Bond -> UPDATED
-float Bond_min_Volt = 176;
-float Bond_max_Volt = 882;
-float Bond_min_Dist = 87;
-float Bond_max_Dist = 967;
-
-float noBond_slope = 1;
-float noBond_intercept = -1.5;
-float Bond_slope = 1;
-float Bond_intercept = -1.5;
-
+// Manual mapping Bond -> NOT UPDATED
+float s2_min_Volt = 176;
+float s2_max_Volt = 884;
+float s2_min_Dist = 89;
+float s2_max_Dist = 990;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   pinMode(sensor1, INPUT);
   pinMode(sensor2, INPUT);
-  pinMode(sync, OUTPUT);
 }
 
 void loop() {
   // Hace las n mediciones y las suma
-  noBond_distance_avg = 0; // Hacer reset por favor!
-  Bond_distance_avg = 0;
+  s1_distance_avg = 0; // Hacer reset por favor!
+  s2_distance_avg = 0; 
   for (int i = 0; i < num_med; i++) {
-    // Synchronization
-    digitalWrite(sync, HIGH);
-    delay(2);
-    digitalWrite(sync, LOW);
-    delay(2);
-    noBond_voltage = analogRead(sensor1);
-    Bond_voltage = analogRead(sensor2);
+    s1_voltage = analogRead(sensor1);
+    s2_voltage = analogRead(sensor2);
     //Serial.print("voltaje sensor 1: ");
-    //Serial.println(noBond_voltage);
+    //Serial.print(s1_voltage);
     //Serial.print(" voltaje sensor 2: ");
-    //Serial.println(Bond_voltage);
-    noBond_distance_avg = noBond_distance_avg + (noBond_voltage - noBond_min_Volt) / (noBond_max_Volt - noBond_min_Volt) * (noBond_max_Dist - noBond_min_Dist) + noBond_min_Dist; // Mapeo manual sensor 1 para tener decimales (regla de 3)
-    Bond_distance_avg = Bond_distance_avg + (Bond_voltage - Bond_min_Volt) / (Bond_max_Volt - Bond_min_Volt) * (Bond_max_Dist - Bond_min_Dist) + Bond_min_Dist; // Mapeo manual sensor 2 para tener decimales (regla de 3)
-    //noBond_distance_avg = map(noBond_voltage,0,1024,30,500); // Mapeo automático de Arduino
+    //Serial.println(s2_voltage);
+    s1_distance_avg = s1_distance_avg + (s1_voltage - s1_min_Volt) / (s1_max_Volt - s1_min_Volt) * (s1_max_Dist - s1_min_Dist) + s1_min_Dist; // Mapeo manual sensor 1 para tener decimales (regla de 3)
+    s2_distance_avg = s2_distance_avg + (s2_voltage - s2_min_Volt) / (s2_max_Volt - s2_min_Volt) * (s2_max_Dist - s2_min_Dist) + s2_min_Dist; // Mapeo manual sensor 2 para tener decimales (regla de 3)
+    //s1_distance_avg = map(s1_voltage,0,1024,30,500); // Mapeo automático de Arduino
     delay(50);
   }
   
-  noBond_distance_avg = noBond_distance_avg / num_med; // Saca el promedio
-  Bond_distance_avg = Bond_distance_avg / num_med; // Saca el promedio
+  s1_distance_avg = s1_distance_avg / num_med; // Saca el promedio
+  s2_distance_avg = s2_distance_avg / num_med; // Saca el promedio
 
   // Calibración hecha en el excel: NotBond
-  noBond_distance_calibrated = (noBond_distance_avg - noBond_intercept) / noBond_slope;
-  //Serial.println(noBond_distance_avg);
-  //Serial.println(noBond_distance_calibrated);
+  s1_distance_calibrated = (s1_distance_avg + 0.09645) / 0.994539706;
+  s1_distance_int = round(s1_distance_calibrated); // Redondea a int
+  Serial.println(s1_distance_int);
 
   // Calibración hecha en el excel: Bond
-  Bond_distance_calibrated = (Bond_distance_avg - Bond_intercept) / Bond_slope;
-  //Serial.println(Bond_distance_avg);
-  Serial.println(Bond_distance_calibrated);
+  s2_distance_calibrated = (s2_distance_avg + 6.587792647) / 1.016928676;
+  s2_distance_int = round(s2_distance_calibrated); // Redondea a int
+  Serial.println(s2_distance_int);
 }
