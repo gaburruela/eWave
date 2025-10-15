@@ -12,12 +12,14 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib import style
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import winsound
 
 # SERIAL COMMUNICATION
 
 port = 'COM3'  # COM9 para Andrés / COM10 (o COM3) para Daniel
 baudrate = 115200
 
+winsound.Beep(350,500)
 
 # Comment out when using simulated data
 # Connect to serial port
@@ -39,7 +41,7 @@ if input('Are you sure? (y/n): ') == 'n':
 print('\nReady to start measurements!')
 
 #csv_path = r'C:\Users\Daniel Q\Documents\TEC\2025 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
-csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\\' # Para Andrés
+csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
 #csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
 
 csv_filename = csv_path + crank_pos + motor_freq + '.csv'
@@ -605,12 +607,15 @@ def Update_graphs():
                         print(line)
                         print('No Bond offset: ', noBond_offset)
                         print('Bond offset: ', Bond_offset)
+                        winsound.Beep(350,500)
                         
                     # Ask for total number of crests
                     elif line.find('Ambient humidity') != -1 and crest_flag:
+                        winsound.Beep(350,500)
                         crests = int(input('\nCrests between sensors: '))
                         crest_flag = False
                         print(line)
+                        
                     else: print(line)
                     
 
