@@ -159,7 +159,7 @@ x=0
 # Create graph and axis Not Bond
 noBond_graph, noBond_axis = plt.subplots(figsize = (11, 4.1))
 noBond_axis.set_title("Mediciones de amplitud de la onda", fontsize = 16, fontweight = 'bold')
-noBond_axis.set_ylabel('Amplitud (mm)')
+noBond_axis.set_ylabel('No Bond Amplitud (mm)')
 plt.close(noBond_graph)
 noBond_line, = noBond_axis.plot([],[])
 
@@ -173,7 +173,7 @@ noBond_canvas.get_tk_widget().place(x=20, y=20)
 # Create graph and axis Bond
 Bond_graph, Bond_axis = plt.subplots(figsize = (11, 4.1))
 Bond_axis.set_xlabel('Time (s)')
-Bond_axis.set_ylabel('Amplitud (mm)')
+Bond_axis.set_ylabel('Bond Amplitud (mm)')
 plt.close(Bond_graph) # Close the base graph
 Bond_line, = Bond_axis.plot([],[]) # Graph line
 
