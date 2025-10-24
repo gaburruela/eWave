@@ -417,8 +417,8 @@ def Update_graphs():
                         # noBond_height = float(data[9])
                         # Bond_height = float(data[10])
                         
-                        noBond_height = float(data[9]) - noBond_offset
-                        Bond_height = float(data[10]) - Bond_offset
+                        noBond_height = float(data[9]) + noBond_offset
+                        Bond_height = float(data[10]) + Bond_offset
                         
                         # Update tkinter window
                         Humidity_value = (float(data[5]))
