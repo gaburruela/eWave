@@ -363,9 +363,9 @@ void CSV_Results() {
   Serial.print(",");
   
   // Ultrasonics
-  Serial.print(s1_distance_calibrated - s1_zero_lvl);
+  Serial.print(s1_zero_lvl - s1_distance_calibrated);
   Serial.print(",");
-  Serial.println(s2_distance_calibrated - s2_zero_lvl);
+  Serial.println(s2_zero_lvl - s2_distance_calibrated);
 }
 
 
