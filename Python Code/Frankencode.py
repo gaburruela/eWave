@@ -46,7 +46,7 @@ csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
 
 csv_filename = csv_path + crank_pos + motor_freq + '.csv'
 
-# Espera unos segundos para asegurarse de que la conexión esté establecida
+# Waits a couple of seconds to establish a conection with the arduino
 time.sleep(2)
 
 
@@ -54,7 +54,8 @@ time.sleep(2)
 
 # Wave variables
 max_waves = 120
-graph_max = 100 # Data points, not waves
+graph_max = 20 # Data points, not waves, gets calculated automatically on first period of wave
+points_per_period_flag = True
 
 # Graph variables
 time_csv = []
@@ -133,7 +134,7 @@ crests = 0
 # Others
 noBond_real_zero = 465 # measured height at zero
 Bond_real_zero = 495
-anti_ripple = 2 # crests to ignore
+anti_ripple = 7 # crests to ignore
 
 # INTERFACE ANTESALA
 window = tk.Tk() # The main Tkinter window
@@ -157,11 +158,13 @@ plt.ion() # turning interactive mode on
 x=0
 
 # Create graph and axis Not Bond
+graph_update = False
+
 noBond_graph, noBond_axis = plt.subplots(figsize = (11, 4.1))
 noBond_axis.set_title("Mediciones de amplitud de la onda", fontsize = 16, fontweight = 'bold')
 noBond_axis.set_ylabel('No Bond Amplitud (mm)')
 plt.close(noBond_graph)
-noBond_line, = noBond_axis.plot([],[])
+noBond_line, = noBond_axis.plot([],[], linestyle = 'None', marker = 'o')
 
 # Insert the graph into tkinter window
 noBond_canvas = FigureCanvasTkAgg(noBond_graph, master = window)
@@ -175,7 +178,7 @@ Bond_graph, Bond_axis = plt.subplots(figsize = (11, 4.1))
 Bond_axis.set_xlabel('Time (s)')
 Bond_axis.set_ylabel('Bond Amplitud (mm)')
 plt.close(Bond_graph) # Close the base graph
-Bond_line, = Bond_axis.plot([],[]) # Graph line
+Bond_line, = Bond_axis.plot([],[], linestyle = 'None', marker = 'o') # Graph line
 
 # Insert the graph into tkinter window
 Bond_canvas = FigureCanvasTkAgg(Bond_graph, master = window)
@@ -188,7 +191,7 @@ Bond_canvas.get_tk_widget().place(x=20, y=429)
 # CREATE LABELS AND TEXT BOXES
 
 # Environment condition box
-T = tk.Text(window, height = 31, width = 45)
+T = tk.Text(window, height = 33, width = 45)
 T.pack()
 T.place(x = 1511, y = 43, anchor = 'ne')
 
@@ -278,6 +281,11 @@ wavelength_stdev_text.config(font =("Courier", font_size))
 wavelength_stdev_text.pack()
 wavelength_stdev_text.place(x = xpos, rely = ystart + linespace*15, anchor = 'nw')
 
+wave_number_text = tk.Label(window)
+wave_number_text.config(font =("Courier", font_size))
+wave_number_text.pack()
+wave_number_text.place(x = xpos, rely = ystart + linespace*16, anchor = 'nw')
+
 
 
 # FUNCTION TIME! - FOR PARAMETERS
@@ -360,6 +368,7 @@ def Update_graphs():
     global noBond_pp, Bond_pp, noBond_freq, Bond_freq, wavelength
     global noBond_pp_avg, noBond_pp_stdev, Bond_pp_avg, Bond_pp_stdev
     global noBond_freq_avg, noBond_freq_stdev, Bond_freq_avg, Bond_freq_stdev, wavelength_avg, wavelength_stdev, crest_flag, crests
+    global graph_update, graph_max, points_per_period_flag
     #global sine_counter
     
     # Abre el archivo CSV en modo de escritura
@@ -451,6 +460,9 @@ def Update_graphs():
                         wavelength_avg_text.config(text = f"Wavelength Avg (m): {wavelength_avg:.3f}")
                         wavelength_stdev_text.config(text = f"Wavelength StDev (m): {wavelength_stdev:.3f}")
 
+                        wave_number_text.config(text = f"Wave number: {int(Bond_wave_counter)}")
+
+                        
                         # NO BOND
                         # Not an empty array
                         if len(noBond_half_period) >= 1:
@@ -497,6 +509,10 @@ def Update_graphs():
                                             wavelength_avg, wavelength_stdev = Stats(wavelength)
                                             #print('Wavelength:')
                                             #print('Average: ', wavelength_avg, ', Standard deviation: ', wavelength_stdev)
+
+                                        if points_per_period_flag:
+                                            graph_max = int(1.4*len(noBond_measurements))
+                                            points_per_period_flag = False
 
                                     # Update period counter
                                     noBond_wave_counter += 0.5
@@ -552,6 +568,7 @@ def Update_graphs():
                                     
                                     # Update period counter
                                     Bond_wave_counter += 0.5
+                                    graph_update = True
 
                                 #print('\nBond:\nHalf period: \n', Bond_half_period)
                                 Bond_half_period = []
@@ -571,7 +588,7 @@ def Update_graphs():
                         noBond_measurements.append(noBond_height)
                         time_csv.append(ttime)
 
-                        if len(Bond_measurements) % 10 == 0:
+                        if graph_update:
                             Bond_line.set_xdata(time_csv)
                             Bond_line.set_ydata(Bond_measurements)
                             
@@ -592,6 +609,8 @@ def Update_graphs():
                             window.update_idletasks()
                             window.update()
 
+                            graph_update = False
+
                             if len(time_csv) >= graph_max:
                                 Bond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
                                 noBond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
@@ -605,8 +624,8 @@ def Update_graphs():
                         Bond_offset = Bond_real_zero - Bond_zero_lvl
 
                         print(line)
-                        print('No Bond offset: ', noBond_offset)
-                        print('Bond offset: ', Bond_offset)
+                        # print('No Bond offset: ', noBond_offset)
+                        # print('Bond offset: ', Bond_offset)
                         winsound.Beep(350,500)
                         
                     # Ask for total number of crests
