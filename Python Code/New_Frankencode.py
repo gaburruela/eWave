@@ -31,12 +31,12 @@ except serial.SerialException as e:
     exit()
 
 # Nombre del archivo CSV
-crank_pos = input('Crank Position: ') + " mm - "
-motor_freq = input('Motor Frequency (Hz): ') + " Hz"
+crank_pos = input('Crank Position (mm): ')
+motor_freq = input('Motor Frequency (Hz): ')
 
 if input('Are you sure? (y/n): ') == 'n':
-    crank_pos = input('Crank Position: ') + " mm - "
-    motor_freq = input('Motor Frequency (Hz): ') + " Hz"
+    crank_pos = input('Crank Position: ')
+    motor_freq = input('Motor Frequency (Hz): ')
 
 print('\nReady to start measurements!')
 
@@ -44,7 +44,7 @@ csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester
 #csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
 #csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
 
-csv_filename = csv_path + crank_pos + motor_freq + '.csv'
+csv_filename = csv_path + crank_pos + ' mm - ' + motor_freq + ' Hz.csv'
 
 # Waits a couple of seconds to establish a conection with the arduino
 time.sleep(2)
@@ -132,8 +132,6 @@ crest_flag = True
 crests = 0
 
 # Others
-noBond_real_zero = 465 # measured height at zero
-Bond_real_zero = 495
 anti_ripple = 7 # crests to ignore
 
 # INTERFACE ANTESALA
@@ -332,30 +330,6 @@ def Stats(var):
     return avg, stdev
 
 
-# Simulated sine stuff
-'''
-# Generate random sine wave for testing wihtout tank ouputs
-# Simulated sine wave parameters
-data_points = 300 # Number of datapoints
-total_periods = 10 # Total of periods 
-simulated_time = np.linspace(0, 2*total_periods*np.pi, data_points)
-
-# simulated_sine = np.sin(simulated_time) + np.random.normal(scale=0.1, size=data_points)
-simulated_sine = np.sin(simulated_time)
-
-# Variables to use simulated data
-sine_counter = 0
-sim_offset = 25 # Plays the part of the phase shift
-
-# Plot the graph to see the resulting sine wave
-plt.plot(simulated_time, simulated_sine)
-plt.plot(simulated_time[sim_offset], simulated_sine[sim_offset], 'or')
-plt.plot(simulated_time, np.zeros(data_points), 'm')
-plt.show()
-
-crests = int(input('\nCrests between sensors: '))
-data = [0,1,2,3,4,5,6,7,8]
-'''
 
 # ACTUAL CODE
 
@@ -369,7 +343,6 @@ def Update_graphs():
     global noBond_pp_avg, noBond_pp_stdev, Bond_pp_avg, Bond_pp_stdev
     global noBond_freq_avg, noBond_freq_stdev, Bond_freq_avg, Bond_freq_stdev, wavelength_avg, wavelength_stdev, crest_flag, crests
     global graph_update, graph_max, points_per_period_flag
-    #global sine_counter
     
     # Abre el archivo CSV en modo de escritura
     with open(csv_filename, mode='w', newline='') as file:
@@ -379,7 +352,6 @@ def Update_graphs():
         
         try:
             while Bond_wave_counter < max_waves:
-                #if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
                 if ser.in_waiting > 0:
                     # Read serial port string
                     line = ser.readline().decode('utf-8').strip()
@@ -388,18 +360,10 @@ def Update_graphs():
                     data = line.split(',')
 
                     # Right stage of Arduino code
-                    #if sine_counter + sim_offset < len(simulated_sine): # Usar esta linea para usar datos simulados
                     if len(data) == 11:
                         
                         # Escribe los datos en el archivo CSV
                         writer.writerow(data)
-
-                        # Simutaled stuff
-                        '''
-                        ttime = simulated_time[sine_counter]
-                        Bond_height = simulated_sine[sine_counter]
-                        noBond_height = simulated_sine[sine_counter + sim_offset]
-                        '''
 
                         # Get time starting at zero
                         if time_start_flag == True:
@@ -425,9 +389,6 @@ def Update_graphs():
                         ttime = float(data[0]) - time_start
                         noBond_height = float(data[9])
                         Bond_height = float(data[10])
-                        
-                        # noBond_height = float(data[9]) + noBond_offset
-                        # Bond_height = float(data[10]) + Bond_offset
                         
                         # Update tkinter window
                         Humidity_value = (float(data[5]))
@@ -481,14 +442,11 @@ def Update_graphs():
                                     noBond_prev_time = ttime
                                     noBond_sign_cross = noBond_height
                                 else:
-                                    #print('No Bond Wave counter:', noBond_wave_counter)
                                     # Peak-Peak
                                     noBond_max_height, noBond_min_height = PP(noBond_half_period, noBond_max_height, noBond_min_height, noBond_pp)
                                     
                                     if len(noBond_pp) >= 2:
                                         noBond_pp_avg, noBond_pp_stdev = Stats(noBond_pp)
-                                        #print('No Bond Peak-Peak:')
-                                        #print('Average: ', noBond_pp_avg, ', Standard deviation: ', noBond_pp_stdev)
 
                                     # Frequency
                                     if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
@@ -498,18 +456,14 @@ def Update_graphs():
 
                                         if len(noBond_freq) >= 2:
                                             noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
-                                            #print('No Bond Frequency:')
-                                            #print('Average: ', noBond_freq_avg, ', Standard deviation: ', noBond_freq_stdev)
 
                                         # Wavelength calculations
                                         Wavelength(wavelength)
-                                        #print('Wavelength:' , wavelength)
 
                                         if len(wavelength) >= 2:
                                             wavelength_avg, wavelength_stdev = Stats(wavelength)
-                                            #print('Wavelength:')
-                                            #print('Average: ', wavelength_avg, ', Standard deviation: ', wavelength_stdev)
 
+                                        # Calculate points to graph at once
                                         if points_per_period_flag:
                                             graph_max = int(1.4*len(noBond_measurements))
                                             points_per_period_flag = False
@@ -517,7 +471,6 @@ def Update_graphs():
                                     # Update period counter
                                     noBond_wave_counter += 0.5
 
-                                #print('\nNo Bond:\nHalf period: \n', noBond_half_period)
                                 noBond_half_period = []
                         # Only add a measurement every 3 measurements
                         if amplitude_flag == 0:
@@ -541,20 +494,16 @@ def Update_graphs():
                                         Bond_first_wave = False
                                         Bond_prev_time = ttime
                                 else:
-                                    #print('Bond Wave counter:', Bond_wave_counter)
                                     # Peak-Peak
                                     Bond_max_height, Bond_min_height = PP(Bond_half_period, Bond_max_height, Bond_min_height, Bond_pp)
                                     
                                     if len(Bond_pp) >= 2:
                                         Bond_pp_avg, Bond_pp_stdev = Stats(Bond_pp)
-                                        #print('Bond Peak-Peak:')
-                                        #print('Average: ', Bond_pp_avg, ', Standard deviation: ', Bond_pp_stdev)
 
                                     # Frequency
                                     if Bond_wave_counter % 1 == 0.5:
                                         Freq(Bond_wave_counter, ttime, Bond_prev_time, Bond_freq)
                                         Bond_prev_time = ttime
-                                        #print('Freq test: ', Bond_freq)
                                     
                                     # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
                                     else:
@@ -563,14 +512,12 @@ def Update_graphs():
                                     
                                     if len(Bond_freq) >= 2:
                                         Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)
-                                        #print('Bond Frequency:')
-                                        #print('Average: ', Bond_freq_avg, ', Standard deviation: ', Bond_freq_stdev)
                                     
                                     # Update period counter
                                     Bond_wave_counter += 0.5
                                     graph_update = True
+                                    #print(Bond_wave_counter)
 
-                                #print('\nBond:\nHalf period: \n', Bond_half_period)
                                 Bond_half_period = []
 
                         if amplitude_flag == 0:
@@ -580,8 +527,7 @@ def Update_graphs():
                         # Make sure it stays bounded at 3
                         if amplitude_flag == 3:
                             amplitude_flag = 0
-                            
-                        #sine_counter += 1 # Only for simulations
+                        
 
                         # START GRAPH AND INTERFACE
                         Bond_measurements.append(Bond_height)
@@ -620,20 +566,18 @@ def Update_graphs():
                         data_zero = line.split(',')
                         noBond_zero_lvl = float(data_zero[1])
                         Bond_zero_lvl = float(data_zero[2])
-                        noBond_offset = noBond_real_zero - noBond_zero_lvl
-                        Bond_offset = Bond_real_zero - Bond_zero_lvl
 
                         print(line)
-                        # print('No Bond offset: ', noBond_offset)
-                        # print('Bond offset: ', Bond_offset)
                         winsound.Beep(350,500)
                         
                     # Ask for total number of crests
-                    elif line.find('Ambient humidity') != -1 and crest_flag:
-                        winsound.Beep(350,500)
-                        crests = int(input('\nCrests between sensors: '))
-                        crest_flag = False
-                        print(line)
+                    elif line.find('Ambient humidity') != -1:
+                        if crest_flag:
+                            crests = int(input('\nCrests between sensors: '))
+                            crest_flag = False
+                        else:
+                            winsound.Beep(350,500)
+                            print(line)
                         
                     else: print(line)
                     
