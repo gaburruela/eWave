@@ -18,7 +18,7 @@ import pandas
 # GENERAL VARIABLES
 
 # Wave variables
-max_waves = 100
+max_waves = 40
 graph_max = 50 # Data points, not waves
 
 # Graph variables
@@ -97,9 +97,7 @@ crest_flag = True
 crests = 0
 
 # Others
-noBond_real_zero = 427
-Bond_real_zero = 427
-anti_ripple = 5
+anti_ripple = 7
 
 # FUNCTION TIME! - FOR PARAMETERS
 
@@ -257,9 +255,7 @@ for carpeta in folders:
         crests = 0
 
         # Others
-        noBond_real_zero = 427
-        Bond_real_zero = 427
-        anti_ripple = 5
+        anti_ripple = 7
 
                 
         dataset_filename = os.path.join(carpeta,archivo)
@@ -462,7 +458,7 @@ for carpeta in folders:
                 if amplitude_flag == 0:
                     Bond_half_period.append(Bond_height)
 
-                amplitude_flag += 1
+                #amplitude_flag += 1
                 # Make sure it stays bounded at 3
                 if amplitude_flag == 3:
                     amplitude_flag = 0
@@ -503,6 +499,64 @@ for carpeta in folders:
         # Add the results
         results_file.write(str(Bond_pp_median) + ',' + str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
         results_file.close()
+
+        # Uncomment if want to see graph
+
+        # Plot variables
+        wave_graph = plt.figure()
+        Bond_ax = wave_graph.add_subplot(111)
+
+        # Slider
+        num_graph_waves = 8 # Amount of waves to plot
+        data_range = num_graph_waves*datapoints_per_wave # Resulting amount of data points to plot
+        slider_width = 0.65
+        time_range = wave_graph.add_axes([0.15, 0.05, slider_width, 0.03]) # Slider visual dimensions
+
+
+        # Generate wave lines
+        Bond_line, = Bond_ax.plot(time_data[:data_range]-time_start, Bond_height_data[:data_range], lw = 2, marker = '.', label = 'Bond')
+        noBond_line, = Bond_ax.plot(time_data[:data_range]-time_start, noBond_height_data[:data_range], lw = 2, marker = '.', label = 'noBond', color = 'green')
+
+        # Generate x axis label
+        Bond_ax.set_xlabel('Time (s)')
+        Bond_ax.legend() # Add legend
+
+        # Plot readjustments to fit slider
+        wave_graph.subplots_adjust(left=0.15, bottom=0.2)
+
+        time_slider = Slider(
+            ax = time_range,
+            label = 'Time (s)',
+            valmin = 0,
+            valmax = slider_width*100,
+            valinit = 0,
+            valstep = 1
+        )
+
+        # Initial limits of the graph
+        plt.xlim([0, data_range])
+
+        # Update graph variables
+        def update_slider(val):
+            # Slider mapping
+            slider_pos = int(val*(len(time_data) - data_range -1)/(slider_width*100)) # Mapea el rango del slider a la posición del arreglo
+            
+            # Ajusta el lim del eje x para el nuevo valor del slider
+            plt.subplot(111)
+            plt.xlim([time_data[slider_pos]-time_start, time_data[slider_pos + data_range]-time_start]) 
+
+            # Da nuevos datos por graficar
+            Bond_line.set_ydata(Bond_height_data[slider_pos:slider_pos + data_range])
+            Bond_line.set_xdata(time_data[slider_pos:slider_pos + data_range]-time_start)
+            noBond_line.set_ydata(noBond_height_data[slider_pos:slider_pos + data_range])
+            noBond_line.set_xdata(time_data[slider_pos:slider_pos + data_range]-time_start)
+
+            wave_graph.canvas.draw_idle()
+            
+        # Function to call on eahc slider change
+        time_slider.on_changed(update_slider)
+
+        plt.show()
 
 
 # # Correct for wrong number of crests - ALWAYS MAKE CORR POSITIVE
@@ -572,4 +626,4 @@ for carpeta in folders:
 ##time_slider.on_changed(update_slider)
 ##
 ##plt.show()
-
+##

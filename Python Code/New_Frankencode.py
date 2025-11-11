@@ -5,7 +5,6 @@ import numpy as np
 import argparse
 import os
 import statistics
-import random
 from PIL import Image, ImageTk # Images
 import tkinter as tk # Interface
 import matplotlib.pyplot as plt
@@ -16,7 +15,7 @@ import winsound
 
 # SERIAL COMMUNICATION
 
-port = 'COM4'  # COM9 para Andrés / COM4 para Daniel
+port = 'COM3'  # COM3 para Andrés / COM4 para Daniel
 baudrate = 115200
 
 winsound.Beep(350,500)
@@ -31,20 +30,20 @@ except serial.SerialException as e:
     exit()
 
 # Nombre del archivo CSV
-crank_pos = input('Crank Position (mm): ')
 motor_freq = input('Motor Frequency (Hz): ')
+crank_pos = input('Crank Position (mm): ')
 
 if input('Are you sure? (y/n): ') == 'n':
-    crank_pos = input('Crank Position: ')
     motor_freq = input('Motor Frequency (Hz): ')
+    crank_pos = input('Crank Position (mm): ')
 
 print('\nReady to start measurements!')
 
-csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
-#csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
+#csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
+csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
 #csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
 
-csv_filename = csv_path + crank_pos + ' mm - ' + motor_freq + ' Hz.csv'
+csv_filename = csv_path + motor_freq + ' Hz - ' + crank_pos + ' mm.csv'
 
 # Waits a couple of seconds to establish a conection with the arduino
 time.sleep(2)
@@ -53,7 +52,7 @@ time.sleep(2)
 # GENERAL VARIABLES
 
 # Wave variables
-max_waves = 120
+max_waves = 40
 graph_max = 20 # Data points, not waves, gets calculated automatically on first period of wave
 points_per_period_flag = True
 
@@ -82,7 +81,6 @@ Bond_anti_ripple = 0
 
 # Other flags
 time_start_flag = True
-amplitude_flag = 0
 
 # Store half a period of the wave
 noBond_half_period = []
@@ -130,6 +128,10 @@ wavelength_stdev = 0
 sensor_dist = 2.22
 crest_flag = True
 crests = 0
+
+# Rolling averages
+rolling_window = 5 # number of points to average
+rolling_counter = 0
 
 # Others
 anti_ripple = 7 # crests to ignore
@@ -335,7 +337,7 @@ def Stats(var):
 
 def Update_graphs():
     global time_csv, Bond_measurements, Bond_line, noBond_measurements, noBond_line
-    global noBond_first_wave, Bond_first_wave, time_start_flag, noBond_anti_ripple, Bond_anti_ripple, amplitude_flag
+    global noBond_first_wave, Bond_first_wave, time_start_flag, noBond_anti_ripple, Bond_anti_ripple
     global noBond_half_period, noBond_wave_counter, Bond_half_period, Bond_wave_counter
     global noBond_max_height, noBond_min_height, Bond_max_height, Bond_min_height
     global noBond_prev_time, Bond_prev_time, noBond_sign_cross, Bond_sign_cross, time_diff
@@ -472,9 +474,9 @@ def Update_graphs():
                                     noBond_wave_counter += 0.5
 
                                 noBond_half_period = []
-                        # Only add a measurement every 3 measurements
-                        if amplitude_flag == 0:
-                            noBond_half_period.append(noBond_height)
+                                
+                        # Add a new measurement
+                        noBond_half_period.append(noBond_height)
 
                         # BOND
                         # Not an empty array
@@ -520,13 +522,8 @@ def Update_graphs():
 
                                 Bond_half_period = []
 
-                        if amplitude_flag == 0:
-                            Bond_half_period.append(Bond_height)
+                        Bond_half_period.append(Bond_height)
 
-                        amplitude_flag += 1
-                        # Make sure it stays bounded at 3
-                        if amplitude_flag == 3:
-                            amplitude_flag = 0
                         
 
                         # START GRAPH AND INTERFACE
@@ -600,7 +597,7 @@ def Update_graphs():
     if (input('\nSave data? (y/n): ') == 'y'):
         results_file = open(csv_path + 'Results.csv', mode='a')
         # Name of the test
-        results_file.write('\n' + crank_pos + ',' + motor_freq + ',')
+        results_file.write('\n' + motor_freq + ',' + crank_pos + ',')
         # Add the results
         results_file.write(str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
         results_file.write(str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
