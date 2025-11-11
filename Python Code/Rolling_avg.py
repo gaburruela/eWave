@@ -33,7 +33,7 @@ for num_media in window:
     for archivo in os.listdir(carpeta):
         path = os.path.join(carpeta,archivo)
         file_name, ext = os.path.splitext(archivo)
-        if os.path.isfile(path) and not archivo == "Results.csv":
+        if os.path.isfile(path) and not archivo == "Results.csv" and not archivo == "Past data/":
             output_path = f"C:/eWave/eWave/Datasets/II Semester 2025/15_Hz_Media_{num_media}"
             calcular_media_movil(path, num_media, output_path, file_name)
         
