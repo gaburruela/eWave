@@ -15,7 +15,7 @@ import winsound
 
 # SERIAL COMMUNICATION
 
-port = 'COM3'  # COM3 para Andrés / COM4 para Daniel
+port = 'COM4'  # COM3 para Andrés / COM4 para Daniel / COM6 para Gabriel
 baudrate = 115200
 
 winsound.Beep(350,500)
@@ -39,9 +39,9 @@ if input('Are you sure? (y/n): ') == 'n':
 
 print('\nReady to start measurements!')
 
-#csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
-csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
-#csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
+csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
+#csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
+#csv_path = r'C:\Users\Gabu\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Gabriel
 
 csv_filename = csv_path + motor_freq + ' Hz - ' + crank_pos + ' mm.csv'
 
@@ -131,10 +131,12 @@ crests = 0
 
 # Rolling averages
 rolling_window = 5 # number of points to average
-rolling_counter = 0
+noBond_rolling_array = [] # store first 5 measurements
+Bond_rolling_array = []
 
 # Others
 anti_ripple = 7 # crests to ignore
+
 
 # INTERFACE ANTESALA
 window = tk.Tk() # The main Tkinter window
@@ -425,140 +427,151 @@ def Update_graphs():
 
                         wave_number_text.config(text = f"Wave number: {int(Bond_wave_counter)}")
 
-                        
-                        # NO BOND
-                        # Not an empty array
-                        if len(noBond_half_period) >= 1:
-                            if noBond_anti_ripple != 0:
-                                if noBond_anti_ripple > anti_ripple:
-                                    noBond_anti_ripple = 0
-                                else:
-                                    noBond_anti_ripple += 1
-                                
-                            # New zero crossing found
-                            if noBond_measurements[-1] * noBond_height < 0 and noBond_anti_ripple == 0 or noBond_height == 0:
-                                noBond_anti_ripple += 1
-                                # Ignore first wave
-                                if noBond_first_wave == True:
-                                    noBond_first_wave = False
-                                    noBond_prev_time = ttime
-                                    noBond_sign_cross = noBond_height
-                                else:
-                                    # Peak-Peak
-                                    noBond_max_height, noBond_min_height = PP(noBond_half_period, noBond_max_height, noBond_min_height, noBond_pp)
-                                    
-                                    if len(noBond_pp) >= 2:
-                                        noBond_pp_avg, noBond_pp_stdev = Stats(noBond_pp)
 
-                                    # Frequency
-                                    if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
-                                        Freq(noBond_wave_counter, ttime, noBond_prev_time, noBond_freq)
+                        # Add a new measurement
+                        noBond_rolling_array.append(noBond_height)
+                        Bond_rolling_array.append(Bond_height)
+                            
+                        if len(noBond_rolling_array) == rolling_window:
+                            # Update heights to reflect rolling averages
+                            noBond_height = statistics.mean(noBond_rolling_array)
+                            Bond_height = statistics.mean(Bond_rolling_array)
+                            
+                        
+                            # NO BOND
+                            # Not an empty array
+                            if len(noBond_half_period) >= 1:
+                                if noBond_anti_ripple != 0:
+                                    if noBond_anti_ripple > anti_ripple:
+                                        noBond_anti_ripple = 0
+                                    else:
+                                        noBond_anti_ripple += 1
+                                    
+                                # New zero crossing found
+                                if noBond_half_period[-1] * noBond_height < 0 and noBond_anti_ripple == 0 or noBond_height == 0:
+                                    noBond_anti_ripple += 1
+                                    # Ignore first wave
+                                    if noBond_first_wave == True:
+                                        noBond_first_wave = False
                                         noBond_prev_time = ttime
                                         noBond_sign_cross = noBond_height
-
-                                        if len(noBond_freq) >= 2:
-                                            noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
-
-                                        # Wavelength calculations
-                                        Wavelength(wavelength)
-
-                                        if len(wavelength) >= 2:
-                                            wavelength_avg, wavelength_stdev = Stats(wavelength)
-
-                                        # Calculate points to graph at once
-                                        if points_per_period_flag:
-                                            graph_max = int(1.4*len(noBond_measurements))
-                                            points_per_period_flag = False
-
-                                    # Update period counter
-                                    noBond_wave_counter += 0.5
-
-                                noBond_half_period = []
-                                
-                        # Add a new measurement
-                        noBond_half_period.append(noBond_height)
-
-                        # BOND
-                        # Not an empty array
-                        if len(Bond_half_period) >= 1:
-                            if Bond_anti_ripple != 0:
-                                if Bond_anti_ripple > anti_ripple:
-                                    Bond_anti_ripple = 0
-                                else:
-                                    Bond_anti_ripple += 1
-                            
-                            # New zero crossing found
-                            if Bond_measurements[-1] * Bond_height < 0 and Bond_anti_ripple == 0 or Bond_height == 0:
-                                Bond_anti_ripple = 1
-                                # Ignore first wave
-                                if Bond_first_wave == True:
-                                    if noBond_first_wave == False: # No Bond should already be done with its first wave
-                                        Bond_first_wave = False
-                                        Bond_prev_time = ttime
-                                else:
-                                    # Peak-Peak
-                                    Bond_max_height, Bond_min_height = PP(Bond_half_period, Bond_max_height, Bond_min_height, Bond_pp)
-                                    
-                                    if len(Bond_pp) >= 2:
-                                        Bond_pp_avg, Bond_pp_stdev = Stats(Bond_pp)
-
-                                    # Frequency
-                                    if Bond_wave_counter % 1 == 0.5:
-                                        Freq(Bond_wave_counter, ttime, Bond_prev_time, Bond_freq)
-                                        Bond_prev_time = ttime
-                                    
-                                    # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
                                     else:
-                                        time_diff = ttime - noBond_prev_time
-                                        Bond_sign_cross = Bond_height
-                                    
-                                    if len(Bond_freq) >= 2:
-                                        Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)
-                                    
-                                    # Update period counter
-                                    Bond_wave_counter += 0.5
-                                    graph_update = True
-                                    #print(Bond_wave_counter)
+                                        # Peak-Peak
+                                        noBond_max_height, noBond_min_height = PP(noBond_half_period, noBond_max_height, noBond_min_height, noBond_pp)
+                                        
+                                        if len(noBond_pp) >= 2:
+                                            noBond_pp_avg, noBond_pp_stdev = Stats(noBond_pp)
 
-                                Bond_half_period = []
+                                        # Frequency
+                                        if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
+                                            Freq(noBond_wave_counter, ttime, noBond_prev_time, noBond_freq)
+                                            noBond_prev_time = ttime
+                                            noBond_sign_cross = noBond_height
 
-                        Bond_half_period.append(Bond_height)
+                                            if len(noBond_freq) >= 2:
+                                                noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
 
-                        
+                                            # Wavelength calculations
+                                            Wavelength(wavelength)
 
-                        # START GRAPH AND INTERFACE
-                        Bond_measurements.append(Bond_height)
-                        noBond_measurements.append(noBond_height)
-                        time_csv.append(ttime)
+                                            if len(wavelength) >= 2:
+                                                wavelength_avg, wavelength_stdev = Stats(wavelength)
 
-                        if graph_update:
-                            Bond_line.set_xdata(time_csv)
-                            Bond_line.set_ydata(Bond_measurements)
+                                            # Calculate points to graph at once
+                                            if points_per_period_flag:
+                                                graph_max = int(1.4*len(noBond_measurements))
+                                                points_per_period_flag = False
+
+                                        # Update period counter
+                                        noBond_wave_counter += 0.5
+
+                                    noBond_half_period = []
+
+                            noBond_half_period.append(noBond_height)
+                            noBond_rolling_array.pop(0)
+
+                            # BOND
+                            # Not an empty array
+                            if len(Bond_half_period) >= 1:
+                                if Bond_anti_ripple != 0:
+                                    if Bond_anti_ripple > anti_ripple:
+                                        Bond_anti_ripple = 0
+                                    else:
+                                        Bond_anti_ripple += 1
+                                
+                                # New zero crossing found
+                                if Bond_measurements[-1] * Bond_height < 0 and Bond_anti_ripple == 0 or Bond_height == 0:
+                                    Bond_anti_ripple = 1
+                                    # Ignore first wave
+                                    if Bond_first_wave == True:
+                                        if noBond_first_wave == False: # No Bond should already be done with its first wave
+                                            Bond_first_wave = False
+                                            Bond_prev_time = ttime
+                                    else:
+                                        # Peak-Peak
+                                        Bond_max_height, Bond_min_height = PP(Bond_half_period, Bond_max_height, Bond_min_height, Bond_pp)
+                                        
+                                        if len(Bond_pp) >= 2:
+                                            Bond_pp_avg, Bond_pp_stdev = Stats(Bond_pp)
+
+                                        # Frequency
+                                        if Bond_wave_counter % 1 == 0.5:
+                                            Freq(Bond_wave_counter, ttime, Bond_prev_time, Bond_freq)
+                                            Bond_prev_time = ttime
+                                        
+                                        # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
+                                        else:
+                                            time_diff = ttime - noBond_prev_time
+                                            Bond_sign_cross = Bond_height
+                                        
+                                        if len(Bond_freq) >= 2:
+                                            Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)
+                                        
+                                        # Update period counter
+                                        Bond_wave_counter += 0.5
+                                        graph_update = True
+                                        #print(Bond_wave_counter)
+
+                                    Bond_half_period = []
+
+                            Bond_half_period.append(Bond_height)
+                            Bond_rolling_array.pop(0)
+
                             
-                            noBond_line.set_xdata(time_csv)
-                            noBond_line.set_ydata(noBond_measurements)
 
-                            Bond_axis.relim()
-                            Bond_axis.autoscale_view()
-                            Bond_canvas.draw()
-                            Bond_canvas.flush_events() # Update data
+                            # START GRAPH AND INTERFACE
+                            Bond_measurements.append(Bond_height)
+                            noBond_measurements.append(noBond_height)
+                            time_csv.append(ttime)
 
-                            noBond_axis.relim()
-                            noBond_axis.autoscale_view()
-                            noBond_canvas.draw()
-                            noBond_canvas.flush_events() 
+                            if graph_update:
+                                Bond_line.set_xdata(time_csv)
+                                Bond_line.set_ydata(Bond_measurements)
+                                
+                                noBond_line.set_xdata(time_csv)
+                                noBond_line.set_ydata(noBond_measurements)
 
-                            # Update pending tasks
-                            window.update_idletasks()
-                            window.update()
+                                Bond_axis.relim()
+                                Bond_axis.autoscale_view()
+                                Bond_canvas.draw()
+                                Bond_canvas.flush_events() # Update data
 
-                            graph_update = False
+                                noBond_axis.relim()
+                                noBond_axis.autoscale_view()
+                                noBond_canvas.draw()
+                                noBond_canvas.flush_events() 
 
-                            if len(time_csv) >= graph_max:
-                                Bond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
-                                noBond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
+                                # Update pending tasks
+                                window.update_idletasks()
+                                window.update()
 
-                    # Store zero levelings and offsets
+                                graph_update = False
+
+                                if len(time_csv) >= graph_max:
+                                    Bond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
+                                    noBond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
+
+                    # Store zero levelings
                     elif line.find('Zero levels') != -1:
                         data_zero = line.split(',')
                         noBond_zero_lvl = float(data_zero[1])
