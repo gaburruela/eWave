@@ -169,9 +169,10 @@ folders = [0,0,0]
 for i in range(1,4):
     folder_num = i+2
     folders[i-1] = f"C:/eWave/eWave/Datasets/II Semester 2025/15_Hz_Media_{folder_num}"
-
+#C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data
 for carpeta in folders:
-    for archivo in os.listdir(carpeta):
+    for archivo in os.listdir(f"C:/eWave/eWave/Datasets/II Semester 2025/Raw_Data"):
+        print(archivo)
 
         # GENERAL VARIABLES
 
@@ -258,7 +259,7 @@ for carpeta in folders:
         anti_ripple = 7
 
                 
-        dataset_filename = os.path.join(carpeta,archivo)
+        dataset_filename = os.path.join(f"C:/eWave/eWave/Datasets/II Semester 2025/Raw_Data",archivo)
         data = pandas.read_csv(dataset_filename)
         # Get time data
         time_data = np.array(data['Time (s)'].tolist())
@@ -492,13 +493,13 @@ for carpeta in folders:
         # print('Bond freq median:', Bond_freq_median, ' average:', Bond_freq_avg, 'and std: ', Bond_freq_stdev)
         # print('Wavelength median:', wavelength_median, 'average:', wavelength_avg, 'std: ', wavelength_stdev)
 
-        results_file = open(csv_path + '/Median_Results.csv', mode='a')
+        #results_file = open(csv_path + '/Median_Results.csv', mode='a')
         # Name of the test
-        file_name = os.path.splitext(archivo)
-        results_file.write('\n' + str(file_name) + ',')
+        #file_name = os.path.splitext(archivo)
+        #results_file.write('\n' + str(file_name) + ',')
         # Add the results
-        results_file.write(str(Bond_pp_median) + ',' + str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
-        results_file.close()
+        #results_file.write(str(Bond_pp_median) + ',' + str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
+        #results_file.close()
 
         # Uncomment if want to see graph
 
@@ -507,7 +508,7 @@ for carpeta in folders:
         Bond_ax = wave_graph.add_subplot(111)
 
         # Slider
-        num_graph_waves = 8 # Amount of waves to plot
+        num_graph_waves = 3 # Amount of waves to plot
         data_range = num_graph_waves*datapoints_per_wave # Resulting amount of data points to plot
         slider_width = 0.65
         time_range = wave_graph.add_axes([0.15, 0.05, slider_width, 0.03]) # Slider visual dimensions
