@@ -2,7 +2,7 @@
 
 const int sensor1 = A3; // No Bond
 const int sensor2 = A2; // Bond
-const int num_med = 1; //nice
+const int num_med = 69; //nice
 
 float s1_voltage;
 float s2_voltage;
@@ -55,7 +55,7 @@ void loop() {
   // Calibración hecha en el excel: NotBond
   s1_distance_calibrated = (s1_distance_avg + 0.09645) / 0.994539706;
   s1_distance_int = round(s1_distance_calibrated); // Redondea a int
-  Serial.println(s1_distance_int);
+  //Serial.println(s1_distance_int);
 
   // Calibración hecha en el excel: Bond
   s2_distance_calibrated = (s2_distance_avg + 6.587792647) / 1.016928676;
