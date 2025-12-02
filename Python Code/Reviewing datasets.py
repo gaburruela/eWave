@@ -157,8 +157,8 @@ def Stats(var):
 
 # Read the data from csv file
 # csv_path = r'C:\Users\Daniel Q\Documents\TEC\2024 - II Semestre\eWave\eWave\Datasets\\' # Para Daniel
-csv_path = r"C:/eWave/eWave/Datasets/II Semester 2025" # Para Andrés
-#csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
+# csv_path = r"C:/eWave/eWave/Datasets/II Semester 2025" # Para Andrés
+csv_path = r'C:/Users/Gabu/Documents/GitHub/eWave/Datasets/II Semester 2025/Raw_Data/' # Para Gabriel
 
 # dataset_filename = f"{csv_path}/90 mm - 15 Hz_Media_movil_3.csv"
 # data = pandas.read_csv(dataset_filename) # Current file's dataset
@@ -170,9 +170,13 @@ for i in range(1,4):
     folder_num = i+2
     folders[i-1] = f"C:/eWave/eWave/Datasets/II Semester 2025/15_Hz_Media_{folder_num}"
 #C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data
+file_to_read = input('Nombre del archivo por leer: ')
 for carpeta in folders:
-    for archivo in os.listdir(f"C:/eWave/eWave/Datasets/II Semester 2025/Raw_Data"):
+    # for archivo in os.listdir(f"C:/eWave/eWave/Datasets/II Semester 2025/Raw_Data"):
+    for archivo in os.listdir(f'C:/Users/Gabu/Documents/GitHub/eWave/Datasets/II Semester 2025/Raw_Data'):
         print(archivo)
+        if archivo != file_to_read:
+            continue
 
         # GENERAL VARIABLES
 
@@ -259,7 +263,7 @@ for carpeta in folders:
         anti_ripple = 7
 
                 
-        dataset_filename = os.path.join(f"C:/eWave/eWave/Datasets/II Semester 2025/Raw_Data",archivo)
+        dataset_filename = os.path.join(f'C:/Users/Gabu/Documents/GitHub/eWave/Datasets/II Semester 2025/Raw_Data',archivo)
         data = pandas.read_csv(dataset_filename)
         # Get time data
         time_data = np.array(data['Time (s)'].tolist())

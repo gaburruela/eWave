@@ -138,155 +138,155 @@ Bond_rolling_array = []
 anti_ripple = 7 # crests to ignore
 
 
-# INTERFACE ANTESALA
-window = tk.Tk() # The main Tkinter window
-window.title('Plotting in Tkinter')
-window.configure(bg="#80e0a7")
+# # INTERFACE ANTESALA
+# window = tk.Tk() # The main Tkinter window
+# window.title('Plotting in Tkinter')
+# window.configure(bg="#80e0a7")
 
-# Computer screen width and height
-screen_width = 1536
-screen_height = 864
+# # Computer screen width and height
+# screen_width = 1536
+# screen_height = 864
 
-window.geometry(f"{screen_width}x{screen_height}")
+# window.geometry(f"{screen_width}x{screen_height}")
 
-image = Image.open("eWave logo.png")
-photo = ImageTk.PhotoImage(image)
+# image = Image.open("eWave logo.png")
+# photo = ImageTk.PhotoImage(image)
 
-image_label = tk.Label(window, image = photo, bg="#80e0a7")
-image_label.place(relx = 0.983, rely = 0.92, anchor = 'se', x=-20, y=-20)
-
-
-plt.ion() # turning interactive mode on
-x=0
-
-# Create graph and axis Not Bond
-graph_update = False
-
-noBond_graph, noBond_axis = plt.subplots(figsize = (11, 4.1))
-noBond_axis.set_title("Mediciones de amplitud de la onda", fontsize = 16, fontweight = 'bold')
-noBond_axis.set_ylabel('No Bond Amplitud (mm)')
-plt.close(noBond_graph)
-noBond_line, = noBond_axis.plot([],[], linestyle = 'None', marker = 'o')
-
-# Insert the graph into tkinter window
-noBond_canvas = FigureCanvasTkAgg(noBond_graph, master = window)
-noBond_canvas.get_tk_widget().pack()
-
-# Place the graph
-noBond_canvas.get_tk_widget().place(x=20, y=20)
-
-# Create graph and axis Bond
-Bond_graph, Bond_axis = plt.subplots(figsize = (11, 4.1))
-Bond_axis.set_xlabel('Time (s)')
-Bond_axis.set_ylabel('Bond Amplitud (mm)')
-plt.close(Bond_graph) # Close the base graph
-Bond_line, = Bond_axis.plot([],[], linestyle = 'None', marker = 'o') # Graph line
-
-# Insert the graph into tkinter window
-Bond_canvas = FigureCanvasTkAgg(Bond_graph, master = window)
-Bond_canvas.get_tk_widget().pack()
-
-# Place the graph
-Bond_canvas.get_tk_widget().place(x=20, y=429)
+# image_label = tk.Label(window, image = photo, bg="#80e0a7")
+# image_label.place(relx = 0.983, rely = 0.92, anchor = 'se', x=-20, y=-20)
 
 
-# CREATE LABELS AND TEXT BOXES
+# plt.ion() # turning interactive mode on
+# x=0
 
-# Environment condition box
-T = tk.Text(window, height = 33, width = 45)
-T.pack()
-T.place(x = 1511, y = 43, anchor = 'ne')
+# # Create graph and axis Not Bond
+# graph_update = False
 
-# Environment conditions
-font_size = 11
-xpos = 1150
-ystart = 0.021
-linespace = 0.038
+# noBond_graph, noBond_axis = plt.subplots(figsize = (11, 4.1))
+# noBond_axis.set_title("Mediciones de amplitud de la onda", fontsize = 16, fontweight = 'bold')
+# noBond_axis.set_ylabel('No Bond Amplitud (mm)')
+# plt.close(noBond_graph)
+# noBond_line, = noBond_axis.plot([],[], linestyle = 'None', marker = 'o')
 
-title = tk.Label(window, text = "Condiciones Ambientales")
-title.config(font =("Courier", 14))
-title.pack()
-title.place(x = 1332, y = 22, anchor = 'center')
+# # Insert the graph into tkinter window
+# noBond_canvas = FigureCanvasTkAgg(noBond_graph, master = window)
+# noBond_canvas.get_tk_widget().pack()
 
-Humidity_valuetext = tk.Label(window)
-Humidity_valuetext.config(font =("Courier", font_size))
-Humidity_valuetext.pack()
-Humidity_valuetext.place(x = xpos, rely = ystart + linespace, anchor = 'nw')
+# # Place the graph
+# noBond_canvas.get_tk_widget().place(x=20, y=20)
 
-AmbTemp_valuetext = tk.Label(window)
-AmbTemp_valuetext.config(font =("Courier", font_size))
-AmbTemp_valuetext.pack()
-AmbTemp_valuetext.place(x = xpos, rely = ystart + linespace*2, anchor = 'nw')
+# # Create graph and axis Bond
+# Bond_graph, Bond_axis = plt.subplots(figsize = (11, 4.1))
+# Bond_axis.set_xlabel('Time (s)')
+# Bond_axis.set_ylabel('Bond Amplitud (mm)')
+# plt.close(Bond_graph) # Close the base graph
+# Bond_line, = Bond_axis.plot([],[], linestyle = 'None', marker = 'o') # Graph line
 
-WaterTemp_valuetext = tk.Label(window)
-WaterTemp_valuetext.config(font = ("Courier", font_size))
-WaterTemp_valuetext.pack()
-WaterTemp_valuetext.place(x = xpos, rely = ystart + linespace*3, anchor = 'nw')
+# # Insert the graph into tkinter window
+# Bond_canvas = FigureCanvasTkAgg(Bond_graph, master = window)
+# Bond_canvas.get_tk_widget().pack()
 
-MotorTemp_valuetext = tk.Label(window)
-MotorTemp_valuetext.config(font =("Courier", font_size))
-MotorTemp_valuetext.pack()
-MotorTemp_valuetext.place(x = xpos, rely = ystart + linespace*4, anchor = 'nw')
+# # Place the graph
+# Bond_canvas.get_tk_widget().place(x=20, y=429)
 
-AngularVelocity_valuetext = tk.Label(window)
-AngularVelocity_valuetext.config(font =("Courier", font_size))
-AngularVelocity_valuetext.pack()
-AngularVelocity_valuetext.place(x = xpos, rely = ystart + linespace*5, anchor = 'nw')
 
-noBond_pp_avg_text = tk.Label(window)
-noBond_pp_avg_text.config(font =("Courier", font_size))
-noBond_pp_avg_text.pack()
-noBond_pp_avg_text.place(x = xpos, rely = ystart + linespace*6, anchor = 'nw')
+# # CREATE LABELS AND TEXT BOXES
 
-noBond_pp_stdev_text = tk.Label(window)
-noBond_pp_stdev_text.config(font =("Courier", font_size))
-noBond_pp_stdev_text.pack()
-noBond_pp_stdev_text.place(x = xpos, rely = ystart + linespace*7, anchor = 'nw')
+# # Environment condition box
+# T = tk.Text(window, height = 33, width = 45)
+# T.pack()
+# T.place(x = 1511, y = 43, anchor = 'ne')
 
-Bond_pp_avg_text = tk.Label(window)
-Bond_pp_avg_text.config(font =("Courier", font_size))
-Bond_pp_avg_text.pack()
-Bond_pp_avg_text.place(x = xpos, rely = ystart + linespace*8, anchor = 'nw')
+# # Environment conditions
+# font_size = 11
+# xpos = 1150
+# ystart = 0.021
+# linespace = 0.038
 
-Bond_pp_stdev_text = tk.Label(window)
-Bond_pp_stdev_text.config(font =("Courier", font_size))
-Bond_pp_stdev_text.pack()
-Bond_pp_stdev_text.place(x = xpos, rely = ystart + linespace*9, anchor = 'nw')
+# title = tk.Label(window, text = "Condiciones Ambientales")
+# title.config(font =("Courier", 14))
+# title.pack()
+# title.place(x = 1332, y = 22, anchor = 'center')
 
-noBond_freq_avg_text = tk.Label(window)
-noBond_freq_avg_text.config(font =("Courier", font_size))
-noBond_freq_avg_text.pack()
-noBond_freq_avg_text.place(x = xpos, rely = ystart + linespace*10, anchor = 'nw')
+# Humidity_valuetext = tk.Label(window)
+# Humidity_valuetext.config(font =("Courier", font_size))
+# Humidity_valuetext.pack()
+# Humidity_valuetext.place(x = xpos, rely = ystart + linespace, anchor = 'nw')
 
-noBond_freq_stdev_text = tk.Label(window)
-noBond_freq_stdev_text.config(font =("Courier", font_size))
-noBond_freq_stdev_text.pack()
-noBond_freq_stdev_text.place(x = xpos, rely = ystart + linespace*11, anchor = 'nw')
+# AmbTemp_valuetext = tk.Label(window)
+# AmbTemp_valuetext.config(font =("Courier", font_size))
+# AmbTemp_valuetext.pack()
+# AmbTemp_valuetext.place(x = xpos, rely = ystart + linespace*2, anchor = 'nw')
 
-Bond_freq_avg_text = tk.Label(window)
-Bond_freq_avg_text.config(font =("Courier", font_size))
-Bond_freq_avg_text.pack()
-Bond_freq_avg_text.place(x = xpos, rely = ystart + linespace*12, anchor = 'nw')
+# WaterTemp_valuetext = tk.Label(window)
+# WaterTemp_valuetext.config(font = ("Courier", font_size))
+# WaterTemp_valuetext.pack()
+# WaterTemp_valuetext.place(x = xpos, rely = ystart + linespace*3, anchor = 'nw')
 
-Bond_freq_stdev_text = tk.Label(window)
-Bond_freq_stdev_text.config(font =("Courier", font_size))
-Bond_freq_stdev_text.pack()
-Bond_freq_stdev_text.place(x = xpos, rely = ystart + linespace*13, anchor = 'nw')
+# MotorTemp_valuetext = tk.Label(window)
+# MotorTemp_valuetext.config(font =("Courier", font_size))
+# MotorTemp_valuetext.pack()
+# MotorTemp_valuetext.place(x = xpos, rely = ystart + linespace*4, anchor = 'nw')
 
-wavelength_avg_text = tk.Label(window)
-wavelength_avg_text.config(font =("Courier", font_size))
-wavelength_avg_text.pack()
-wavelength_avg_text.place(x = xpos, rely = ystart + linespace*14, anchor = 'nw')
+# AngularVelocity_valuetext = tk.Label(window)
+# AngularVelocity_valuetext.config(font =("Courier", font_size))
+# AngularVelocity_valuetext.pack()
+# AngularVelocity_valuetext.place(x = xpos, rely = ystart + linespace*5, anchor = 'nw')
 
-wavelength_stdev_text = tk.Label(window)
-wavelength_stdev_text.config(font =("Courier", font_size))
-wavelength_stdev_text.pack()
-wavelength_stdev_text.place(x = xpos, rely = ystart + linespace*15, anchor = 'nw')
+# noBond_pp_avg_text = tk.Label(window)
+# noBond_pp_avg_text.config(font =("Courier", font_size))
+# noBond_pp_avg_text.pack()
+# noBond_pp_avg_text.place(x = xpos, rely = ystart + linespace*6, anchor = 'nw')
 
-wave_number_text = tk.Label(window)
-wave_number_text.config(font =("Courier", font_size))
-wave_number_text.pack()
-wave_number_text.place(x = xpos, rely = ystart + linespace*16, anchor = 'nw')
+# noBond_pp_stdev_text = tk.Label(window)
+# noBond_pp_stdev_text.config(font =("Courier", font_size))
+# noBond_pp_stdev_text.pack()
+# noBond_pp_stdev_text.place(x = xpos, rely = ystart + linespace*7, anchor = 'nw')
+
+# Bond_pp_avg_text = tk.Label(window)
+# Bond_pp_avg_text.config(font =("Courier", font_size))
+# Bond_pp_avg_text.pack()
+# Bond_pp_avg_text.place(x = xpos, rely = ystart + linespace*8, anchor = 'nw')
+
+# Bond_pp_stdev_text = tk.Label(window)
+# Bond_pp_stdev_text.config(font =("Courier", font_size))
+# Bond_pp_stdev_text.pack()
+# Bond_pp_stdev_text.place(x = xpos, rely = ystart + linespace*9, anchor = 'nw')
+
+# noBond_freq_avg_text = tk.Label(window)
+# noBond_freq_avg_text.config(font =("Courier", font_size))
+# noBond_freq_avg_text.pack()
+# noBond_freq_avg_text.place(x = xpos, rely = ystart + linespace*10, anchor = 'nw')
+
+# noBond_freq_stdev_text = tk.Label(window)
+# noBond_freq_stdev_text.config(font =("Courier", font_size))
+# noBond_freq_stdev_text.pack()
+# noBond_freq_stdev_text.place(x = xpos, rely = ystart + linespace*11, anchor = 'nw')
+
+# Bond_freq_avg_text = tk.Label(window)
+# Bond_freq_avg_text.config(font =("Courier", font_size))
+# Bond_freq_avg_text.pack()
+# Bond_freq_avg_text.place(x = xpos, rely = ystart + linespace*12, anchor = 'nw')
+
+# Bond_freq_stdev_text = tk.Label(window)
+# Bond_freq_stdev_text.config(font =("Courier", font_size))
+# Bond_freq_stdev_text.pack()
+# Bond_freq_stdev_text.place(x = xpos, rely = ystart + linespace*13, anchor = 'nw')
+
+# wavelength_avg_text = tk.Label(window)
+# wavelength_avg_text.config(font =("Courier", font_size))
+# wavelength_avg_text.pack()
+# wavelength_avg_text.place(x = xpos, rely = ystart + linespace*14, anchor = 'nw')
+
+# wavelength_stdev_text = tk.Label(window)
+# wavelength_stdev_text.config(font =("Courier", font_size))
+# wavelength_stdev_text.pack()
+# wavelength_stdev_text.place(x = xpos, rely = ystart + linespace*15, anchor = 'nw')
+
+# wave_number_text = tk.Label(window)
+# wave_number_text.config(font =("Courier", font_size))
+# wave_number_text.pack()
+# wave_number_text.place(x = xpos, rely = ystart + linespace*16, anchor = 'nw')
 
 
 
@@ -396,36 +396,36 @@ def Update_graphs():
                         
                         # Update tkinter window
                         Humidity_value = (float(data[5]))
-                        Humidity_valuetext.config(text = f"Humedad (%): {Humidity_value:.2f}")
+                        # Humidity_valuetext.config(text = f"Humedad (%): {Humidity_value:.2f}")
                         
                         AmbTemp_value = (float(data[6]))
-                        AmbTemp_valuetext.config(text = f"Temperatura ambiente (°C): {AmbTemp_value:.2f}")
+                        # AmbTemp_valuetext.config(text = f"Temperatura ambiente (°C): {AmbTemp_value:.2f}")
                         
                         WaterTemp_value = (float(data[7]))
-                        WaterTemp_valuetext.config(text = f"Temperatura del agua (°C): {WaterTemp_value:.2f}")
+                        # WaterTemp_valuetext.config(text = f"Temperatura del agua (°C): {WaterTemp_value:.2f}")
 
                         MotorTemp_value = (float(data[8]))
-                        MotorTemp_valuetext.config(text = f"Temperatura del motor (°C): {MotorTemp_value:.2f}")
+                        # MotorTemp_valuetext.config(text = f"Temperatura del motor (°C): {MotorTemp_value:.2f}")
 
                         AngularVelocity_value = (float(data[4]))
-                        AngularVelocity_valuetext.config(text = f"Velocidad angular (rpm): {AngularVelocity_value:.2f}")
+                        # AngularVelocity_valuetext.config(text = f"Velocidad angular (rpm): {AngularVelocity_value:.2f}")
 
-                        noBond_pp_avg_text.config(text = f"No Bond Peak-Peak Avg (mm): {noBond_pp_avg:.2f}")
-                        noBond_pp_stdev_text.config(text = f"No Bond Peak-Peak StDev (mm): {noBond_pp_stdev:.2f}")
+                        # noBond_pp_avg_text.config(text = f"No Bond Peak-Peak Avg (mm): {noBond_pp_avg:.2f}")
+                        # noBond_pp_stdev_text.config(text = f"No Bond Peak-Peak StDev (mm): {noBond_pp_stdev:.2f}")
 
-                        Bond_pp_avg_text.config(text = f"Bond Peak-Peak Avg (mm): {Bond_pp_avg:.2f}")
-                        Bond_pp_stdev_text.config(text = f"Bond Peak-Peak StDev (mm): {Bond_pp_stdev:.2f}")
+                        # Bond_pp_avg_text.config(text = f"Bond Peak-Peak Avg (mm): {Bond_pp_avg:.2f}")
+                        # Bond_pp_stdev_text.config(text = f"Bond Peak-Peak StDev (mm): {Bond_pp_stdev:.2f}")
 
-                        noBond_freq_avg_text.config(text = f"No Bond Frequency Avg (Hz): {noBond_freq_avg:.3f}")
-                        noBond_freq_stdev_text.config(text = f"No Bond Frequency StDev (Hz): {noBond_freq_stdev:.3f}")
+                        # noBond_freq_avg_text.config(text = f"No Bond Frequency Avg (Hz): {noBond_freq_avg:.3f}")
+                        # noBond_freq_stdev_text.config(text = f"No Bond Frequency StDev (Hz): {noBond_freq_stdev:.3f}")
                         
-                        Bond_freq_avg_text.config(text = f"Bond Frequency Avg (Hz): {Bond_freq_avg:.3f}")
-                        Bond_freq_stdev_text.config(text = f"Bond Frequency StDev (Hz): {Bond_freq_stdev:.3f}")
+                        # Bond_freq_avg_text.config(text = f"Bond Frequency Avg (Hz): {Bond_freq_avg:.3f}")
+                        # Bond_freq_stdev_text.config(text = f"Bond Frequency StDev (Hz): {Bond_freq_stdev:.3f}")
 
-                        wavelength_avg_text.config(text = f"Wavelength Avg (m): {wavelength_avg:.3f}")
-                        wavelength_stdev_text.config(text = f"Wavelength StDev (m): {wavelength_stdev:.3f}")
+                        # wavelength_avg_text.config(text = f"Wavelength Avg (m): {wavelength_avg:.3f}")
+                        # wavelength_stdev_text.config(text = f"Wavelength StDev (m): {wavelength_stdev:.3f}")
 
-                        wave_number_text.config(text = f"Wave number: {int(Bond_wave_counter)}")
+                        # wave_number_text.config(text = f"Wave number: {int(Bond_wave_counter)}")
 
 
                         # Add a new measurement
@@ -449,6 +449,11 @@ def Update_graphs():
                                     
                                 # New zero crossing found
                                 if noBond_half_period[-1] * noBond_height < 0 and noBond_anti_ripple == 0 or noBond_height == 0:
+                                    
+                                    # Print results every 9 waves
+                                    if Bond_wave_counter % 9 == 0 and Bond_wave_counter > 0:
+                                        print('bond_pp: ', Bond_pp_avg, ' bond_freq: ', Bond_freq_avg, ' wavelength: ', wavelength_avg)  
+                                    
                                     noBond_anti_ripple += 1
                                     # Ignore first wave
                                     if noBond_first_wave == True:
@@ -529,7 +534,7 @@ def Update_graphs():
                                         
                                         # Update period counter
                                         Bond_wave_counter += 0.5
-                                        graph_update = True
+                                        graph_update = False  # En false deja de actualizar ventana
                                         #print(Bond_wave_counter)
 
                                     Bond_half_period = []
@@ -544,32 +549,32 @@ def Update_graphs():
                             noBond_measurements.append(noBond_height)
                             time_csv.append(ttime)
 
-                            if graph_update:
-                                Bond_line.set_xdata(time_csv)
-                                Bond_line.set_ydata(Bond_measurements)
+                            # if graph_update:
+                            #     Bond_line.set_xdata(time_csv)
+                            #     Bond_line.set_ydata(Bond_measurements)
                                 
-                                noBond_line.set_xdata(time_csv)
-                                noBond_line.set_ydata(noBond_measurements)
+                            #     noBond_line.set_xdata(time_csv)
+                            #     noBond_line.set_ydata(noBond_measurements)
 
-                                Bond_axis.relim()
-                                Bond_axis.autoscale_view()
-                                Bond_canvas.draw()
-                                Bond_canvas.flush_events() # Update data
+                            #     Bond_axis.relim()
+                            #     Bond_axis.autoscale_view()
+                            #     Bond_canvas.draw()
+                            #     Bond_canvas.flush_events() # Update data
 
-                                noBond_axis.relim()
-                                noBond_axis.autoscale_view()
-                                noBond_canvas.draw()
-                                noBond_canvas.flush_events() 
+                            #     noBond_axis.relim()
+                            #     noBond_axis.autoscale_view()
+                            #     noBond_canvas.draw()
+                            #     noBond_canvas.flush_events() 
 
-                                # Update pending tasks
-                                window.update_idletasks()
-                                window.update()
+                            #     # Update pending tasks
+                            #     window.update_idletasks()
+                            #     window.update()
 
-                                graph_update = False
+                            #     graph_update = False
 
-                                if len(time_csv) >= graph_max:
-                                    Bond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
-                                    noBond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
+                            #     if len(time_csv) >= graph_max:
+                            #         Bond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
+                            #         noBond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
 
                     # Store zero levelings
                     elif line.find('Zero levels') != -1:
@@ -621,7 +626,8 @@ def Update_graphs():
 
 
 
+Update_graphs()
 
-# RUN THE GUI
-window.after(0, Update_graphs)
-window.mainloop()
+# # RUN THE GUI
+# window.after(0, Update_graphs)
+# window.mainloop()
