@@ -16,7 +16,7 @@ import winsound
 
 # SERIAL COMMUNICATION
 
-port = 'COM4'  # COM9 para Andrés / COM4 para Daniel
+port = 'COM3'  # COM9 para Andrés / COM4 para Daniel
 baudrate = 115200
 
 winsound.Beep(350,500)
@@ -40,8 +40,8 @@ if input('Are you sure? (y/n): ') == 'n':
 
 print('\nReady to start measurements!')
 
-csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
-#csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
+# csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
+csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
 #csv_path = r'C:\Users\garab\ewave Repo\eWave\Datasets\\' # Para Gabriel
 
 csv_filename = csv_path + crank_pos + motor_freq + '.csv'

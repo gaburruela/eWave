@@ -2,7 +2,7 @@
 
 const int sensor1 = A3; // No Bond
 const int sensor2 = A2; // Bond
-const int num_med = 69; //nice
+const int num_med = 10; //nice
 
 float s1_voltage;
 float s2_voltage;

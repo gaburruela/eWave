@@ -52,7 +52,7 @@ time.sleep(2)
 # GENERAL VARIABLES
 
 # Wave variables
-max_waves = 40
+max_waves = 100
 graph_max = 20 # Data points, not waves, gets calculated automatically on first period of wave
 points_per_period_flag = True
 
