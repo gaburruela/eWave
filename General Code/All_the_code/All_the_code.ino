@@ -132,7 +132,7 @@ const float s2_intercept = -1.66541176;
 // Automating code
 // Zero leveling
 int zero_checks = 0; // Amount of zero measurements
-int zero_checks_limit = 7; // Limit of zero measurements to stop zero leveling
+int zero_checks_limit = 3; // Limit of zero measurements to stop zero leveling
 const int zero_sample = 3; // 
 float s1_zero_measurements[zero_sample];
 float s2_zero_measurements[zero_sample];
@@ -144,17 +144,22 @@ float sum2 = 0;
 float s2_zero_measurements_avg = 0;
 float s2_stdv = 4;
 bool zero_leveled = false;
+bool water_moving = false;
 
 // Inductive measurements
 int first_measurements_inductive = 0;
 bool rpm_measured = true;
 const int angular_velocity_checks = 3;
 float average_velocities[angular_velocity_checks];
+float average_velocities_sorted[angular_velocity_checks];
 float final_average_velocity;
 int average_velocities_counter = 0;
 
 // Hummidity measurements
 bool humidity_measured = false;
+
+int start_process = 0;
+bool bandera_inicio = false;
 
 // EXTERNAL FUNCTIONS
 // Manual mapping - get decimals - sensor is just which of the 2 sensors we're mapping
@@ -168,6 +173,25 @@ float mapping(float signal, int sensor) {
   return;
 }
 
+// Sorting to calculate median
+void sortArray(float input[], float output[], int size) {
+  if (input == output) return;
+
+  for (int i = 0; i < size; i++) {
+    output[i] = input[i];
+  }
+
+  for (int i = 0; i < size - 1; i++) {
+    for (int j = 0; j < size - i - 1; j++) {
+      if (output[j] > output[j + 1]) {
+        float temp = output[j];
+        output[j] = output[j + 1];
+        output[j + 1] = temp;
+      }
+    }
+  }
+}
+
 // Zero-leveling
 void Zero_Leveling() {
   zero_leveled = false;
@@ -175,6 +199,7 @@ void Zero_Leveling() {
   while (true) {
     if (zero_checks >= zero_checks_limit){ // Stops zero leveling if the motor is on
       zero_leveled = false;
+      water_moving = true;
       memset(s1_zero_measurements, 0, sizeof(s1_zero_measurements)); // Llena el array con 0
       memset(s2_zero_measurements, 0, sizeof(s2_zero_measurements)); // Llena el array con 0
       s1_stdv = 0;
@@ -240,6 +265,7 @@ void Zero_Leveling() {
       s2_stdv = 0;
       zero_checks = 0;
       zero_leveled = true;
+      water_moving = false;
       break;
     }
     
@@ -254,6 +280,22 @@ void Zero_Leveling() {
 
 // Inductive
 void Inductive() {
+
+  ind_firstPulseDetected = false; // Flag to check if the first pulse has been detected (only used once)
+  ind_lastPulseTime = 0; // Time of the last detected signal
+  ind_currentPulseTime = 0; // Time of the current detected signal
+  ind_timeInterval = 0; // Time between last and current detected signals
+
+  ind_freq = 0; // Value to store measurements
+  ind_avg_freq = 0;
+  ind_counter = 1;
+
+  first_measurements_inductive = 0;
+  memset(angular_velocity_checks, 0, sizeof(angular_velocity_checks)); // Llena el array con 0
+  memset(angular_velocity_checks, 0, sizeof(angular_velocity_checks)); // Llena el array con 0
+  final_average_velocity;
+  average_velocities_counter = 0;
+
   // Check the sensor pin
   while (true){
     if (digitalRead(ind_pin) == HIGH){
@@ -263,9 +305,31 @@ void Inductive() {
         break;
       }
     }
+
+    if(Serial.available() > 0){
+      start_process = Serial.parseInt();
+      if (start_process == 1){
+        bandera_inicio = false;
+        water_moving = false;
+        rpm_measured = false;
+        humidity_measured = false;
+        break;
+      }
+    }
   }
 
   while (true){
+    if(Serial.available() > 0){
+      start_process = Serial.parseInt();
+      if (start_process == 1){
+        bandera_inicio = false;
+        water_moving = false;
+        rpm_measured = false;
+        humidity_measured = false;
+        break;
+      }
+    }
+
     if (digitalRead(ind_pin) == HIGH) { // LOW for infrared, HIGH for inductive
       ind_currentPulseTime = millis(); // Store current time
       
@@ -309,13 +373,16 @@ void Inductive() {
 
           if (average_velocities_counter == angular_velocity_checks){
             average_velocities_counter = 0;
-            for (int i = 0; i < angular_velocity_checks; i++){
-              final_average_velocity += average_velocities[i]; 
-              Serial.println(average_velocities[i]); 
-              }
+
+            sortArray(average_velocities, average_velocities_sorted, angular_velocity_checks);
+
+            if (angular_velocity_checks%2 == 0){
+              ind_avg_freq = ((average_velocities_sorted[(angular_velocity_checks-1)/2])+(average_velocities_sorted[((angular_velocity_checks-1)/2)+1]))/2;
+            }
             
-            final_average_velocity /= angular_velocity_checks;
-            ind_avg_freq = final_average_velocity;
+            if (angular_velocity_checks%2 == 1){
+              ind_avg_freq = average_velocities_sorted[(angular_velocity_checks)/2];
+            }
             rpm_measured = true;
             Serial.println("Final average angular velocity:");
             Serial.println(ind_avg_freq);
@@ -540,29 +607,46 @@ void setup() {
 }
 
 void loop() {
-  int start_process = Serial.parseInt();
 
+  if(Serial.available() > 0){
+    start_process = Serial.parseInt();
+    if (start_process == 1){
+      bandera_inicio = false;
+      water_moving = false;
+    }
+  }
+
+  while(!bandera_inicio){
+    start_process = Serial.parseInt();
+    if (start_process == 1){
+      start_process = 0;
+      bandera_inicio = true;
+      zero_leveled = false;
+      break;
+    }
+  }
+  
   // Inicia proceso al escribir 1 en la terminal.
-  if (start_process == 1){
+  if (!zero_leveled && bandera_inicio == true && water_moving == false){
     Zero_Leveling();
     if (zero_leveled == true){
-      zero_leveled = false;
       Serial.println("Zeros ready");
       Inductive();
       if (rpm_measured = true){
         rpm_measured = false;
         Humidity();
         }
-      }
+    }
   }
-  
-  if (humidity_measured == true) {
+
+  if (humidity_measured) {
     //humidity_measured = false;
     // UNIFORM INTERVALS
     millis_current = millis();
-
+    
     // Take new measurements only if inside the time interval
     if (millis_current - millis_previous >= time_interval) {
+      
       millis_previous = millis_current;
       All_Measurements();
 
