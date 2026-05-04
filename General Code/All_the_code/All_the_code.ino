@@ -132,7 +132,7 @@ const float s2_intercept = -1.66541176;
 // Automating code
 // Zero leveling
 int zero_checks = 0; // Amount of zero measurements
-int zero_checks_limit = 3; // Limit of zero measurements to stop zero leveling
+int zero_checks_limit = 5; // Limit of zero measurements to stop zero leveling
 const int zero_sample = 3; // 
 float s1_zero_measurements[zero_sample];
 float s2_zero_measurements[zero_sample];
@@ -258,7 +258,7 @@ void Zero_Leveling() {
     s2_stdv = sqrt(sum2/zero_sample); 
     
     // Zero level stabilized 
-    if (s1_stdv <= 0.3 && s2_stdv <= 0.3){
+    if (s1_stdv <= 0.6 && s2_stdv <= 0.6){
       memset(s1_zero_measurements, 0, sizeof(s1_zero_measurements)); // Llena el array con 0
       memset(s2_zero_measurements, 0, sizeof(s2_zero_measurements)); // Llena el array con 0
       s1_stdv = 0;

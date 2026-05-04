@@ -6,27 +6,52 @@ import argparse
 import os
 import statistics
 from PIL import Image, ImageTk # Images
-import tkinter as tk # Interface
+##import tkinter as tk # Interface
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib import style
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import winsound
+import asyncio
+from pymodbus.client import ModbusSerialClient
 
 # SERIAL COMMUNICATION
 
-port = 'COM3'  # COM3 para Andrés / COM4 para Daniel / COM6 para Gabriel
+ard_port = 'COM3'  # COM3 para Andrés / COM4 para Daniel / COM6 para Gabriel
 baudrate = 115200
 
 winsound.Beep(350,500)
 
-# Comment out when using simulated data
-# Connect to serial port
+# VFD Control Configuration
+client = ModbusSerialClient( 
+    port='COM4',  # Revisar puerto: COM4 para Andrés
+    baudrate=2400,
+    parity='N',
+    stopbits=1,
+    bytesize=8,
+    timeout=1
+)
+
+
+client.connect()
+
+SLAVE = 1
+
+
+# --- Set frequency (18 Hz) ---
+freq = 1500
+time.sleep(1)
+client.write_register(0x0002, 1800, device_id=SLAVE, no_response_expected=True)
+print('Frequency set')
+
+client.close()
+
+# Connect to serial ard_port
 try:
-    ser = serial.Serial(port, baudrate)
-    print(f"Conectado al puerto {port} a {baudrate} baudios.")
+    ser = serial.Serial(ard_port, baudrate)
+    print(f"Conectado al puerto {ard_port} a {baudrate} baudios.")
 except serial.SerialException as e:
-    print(f"No se pudo abrir el puerto {port}: {e}")
+    print(f"No se pudo abrir el puerto {ard_port}: {e}")
     exit()
 
 # Nombre del archivo CSV
@@ -38,6 +63,10 @@ if input('Are you sure? (y/n): ') == 'n':
     crank_pos = input('Crank Position (mm): ')
 
 print('\nReady to start measurements!')
+
+data = "1"
+data += "\r\n"
+ser.write(data.encode())
 
 #csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
 csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
@@ -333,6 +362,40 @@ def Stats(var):
 
     return avg, stdev
 
+def read_error_register(client):
+    ERROR_BITS = {
+     0: "CRC Error",
+     1: "Data Length Error",
+     3: "Parity Error",
+     4: "Overrun Error",
+     5: "Framing Error",
+     6: "Timeout",
+    }
+    
+    result = client.read_holding_registers(
+     address=0x003D,
+     count=1,
+     device_id=SLAVE
+    )
+
+    if result.isError():
+        print("Modbus error:", result)
+        return
+
+    value = result.registers[0]
+    print(f"\nRaw register value: {value} (0x{value:04X})")
+
+    print("Detected errors:")
+    error_found = False
+
+    for bit, description in ERROR_BITS.items():
+        if value & (1 << bit):
+            print(f"- Bit {bit}: {description}")
+            error_found = True
+
+    if not error_found:
+        print("No errors detected")
+
 
 
 # ACTUAL CODE
@@ -347,255 +410,301 @@ def Update_graphs():
     global noBond_pp_avg, noBond_pp_stdev, Bond_pp_avg, Bond_pp_stdev
     global noBond_freq_avg, noBond_freq_stdev, Bond_freq_avg, Bond_freq_stdev, wavelength_avg, wavelength_stdev, crest_flag, crests
     global graph_update, graph_max, points_per_period_flag
+    global ser
+    
+        # Check if serial port is still connected and valid
+    try:
+        if ser is None or not ser.is_open:
+            print("Serial port is not open. Attempting to reconnect...")
+            try:
+                ser = serial.Serial(ard_port, baudrate, timeout=1)
+                print(f"Reconnected to {ard_port}")
+            except Exception as e:
+                print(f"Failed to reconnect: {e}")
+                window.after(1000, Update_graphs)  # Try again in 1 second
+                return
+    except Exception as e:
+        print(f"Error checking serial port: {e}")
+        window.after(1000, Update_graphs)
+        return
     
     # Abre el archivo CSV en modo de escritura
-    with open(csv_filename, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        # Escribe los encabezados del archivo CSV
-        writer.writerow(["Time (s)", "Accel_x (m/s2)", "Accel_y (m/s2)", "Accel_z (m/s2)", "RPM", "Humidity (percentage)", "Amb_Temp (C)", "Water_Temp (C)", "Motor_Temp (C)", "noBond_height 1 (mm)", "Bond_height 2 (mm)"])
-        
-        try:
-            while Bond_wave_counter < max_waves:
-                if ser.in_waiting > 0:
-                    # Read serial port string
-                    line = ser.readline().decode('utf-8').strip()
-                    #print(line)
-                    # Split the whole serial string into values
-                    data = line.split(',')
-
-                    # Right stage of Arduino code
-                    if len(data) == 11:
-                        
-                        # Escribe los datos en el archivo CSV
-                        writer.writerow(data)
-
-                        # Get time starting at zero
-                        if time_start_flag == True:
-                            time_start_flag = False
-                            time_start = float(data[0])
-
-                        # If at any point the current time is less than the starting time reset everything
-                        if float(data[0]) < time_start:
-                            time_start = float(data[0])
-                            noBond_first_wave = True
-                            Bond_first_wave = True
-                            noBond_half_period = []
-                            noBond_wave_counter = 0
-                            Bond_half_period = []
-                            Bond_wave_counter = 0
-                            noBond_pp = []
-                            Bond_pp = []
-                            noBond_freq = []
-                            Bond_freq = []
-                            wavelength = []
-                        
-                        # Get serial data into variables (offset made with real measurements)
-                        ttime = float(data[0]) - time_start
-                        noBond_height = float(data[9])
-                        Bond_height = float(data[10])
-                        
-                        # Update tkinter window
-                        Humidity_value = (float(data[5]))
-                        Humidity_valuetext.config(text = f"Humedad (%): {Humidity_value:.2f}")
-                        
-                        AmbTemp_value = (float(data[6]))
-                        AmbTemp_valuetext.config(text = f"Temperatura ambiente (°C): {AmbTemp_value:.2f}")
-                        
-                        WaterTemp_value = (float(data[7]))
-                        WaterTemp_valuetext.config(text = f"Temperatura del agua (°C): {WaterTemp_value:.2f}")
-
-                        MotorTemp_value = (float(data[8]))
-                        MotorTemp_valuetext.config(text = f"Temperatura del motor (°C): {MotorTemp_value:.2f}")
-
-                        AngularVelocity_value = (float(data[4]))
-                        AngularVelocity_valuetext.config(text = f"Velocidad angular (rpm): {AngularVelocity_value:.2f}")
-
-                        noBond_pp_avg_text.config(text = f"No Bond Peak-Peak Avg (mm): {noBond_pp_avg:.2f}")
-                        noBond_pp_stdev_text.config(text = f"No Bond Peak-Peak StDev (mm): {noBond_pp_stdev:.2f}")
-
-                        Bond_pp_avg_text.config(text = f"Bond Peak-Peak Avg (mm): {Bond_pp_avg:.2f}")
-                        Bond_pp_stdev_text.config(text = f"Bond Peak-Peak StDev (mm): {Bond_pp_stdev:.2f}")
-
-                        noBond_freq_avg_text.config(text = f"No Bond Frequency Avg (Hz): {noBond_freq_avg:.3f}")
-                        noBond_freq_stdev_text.config(text = f"No Bond Frequency StDev (Hz): {noBond_freq_stdev:.3f}")
-                        
-                        Bond_freq_avg_text.config(text = f"Bond Frequency Avg (Hz): {Bond_freq_avg:.3f}")
-                        Bond_freq_stdev_text.config(text = f"Bond Frequency StDev (Hz): {Bond_freq_stdev:.3f}")
-
-                        wavelength_avg_text.config(text = f"Wavelength Avg (m): {wavelength_avg:.3f}")
-                        wavelength_stdev_text.config(text = f"Wavelength StDev (m): {wavelength_stdev:.3f}")
-
-                        wave_number_text.config(text = f"Wave number: {int(Bond_wave_counter)}")
-
-
-                        # Add a new measurement
-                        noBond_rolling_array.append(noBond_height)
-                        Bond_rolling_array.append(Bond_height)
-                            
-                        if len(noBond_rolling_array) == rolling_window:
-                            # Update heights to reflect rolling averages
-                            noBond_height = statistics.mean(noBond_rolling_array)
-                            Bond_height = statistics.mean(Bond_rolling_array)
-                            
-                        
-                            # NO BOND
-                            # Not an empty array
-                            if len(noBond_half_period) >= 1:
-                                if noBond_anti_ripple != 0:
-                                    if noBond_anti_ripple > anti_ripple:
-                                        noBond_anti_ripple = 0
-                                    else:
-                                        noBond_anti_ripple += 1
-                                    
-                                # New zero crossing found
-                                if noBond_half_period[-1] * noBond_height < 0 and noBond_anti_ripple == 0 or noBond_height == 0:
-                                    noBond_anti_ripple += 1
-                                    # Ignore first wave
-                                    if noBond_first_wave == True:
-                                        noBond_first_wave = False
-                                        noBond_prev_time = ttime
-                                        noBond_sign_cross = noBond_height
-                                    else:
-                                        # Peak-Peak
-                                        noBond_max_height, noBond_min_height = PP(noBond_half_period, noBond_max_height, noBond_min_height, noBond_pp)
-                                        
-                                        if len(noBond_pp) >= 2:
-                                            noBond_pp_avg, noBond_pp_stdev = Stats(noBond_pp)
-
-                                        # Frequency
-                                        if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
-                                            Freq(noBond_wave_counter, ttime, noBond_prev_time, noBond_freq)
-                                            noBond_prev_time = ttime
-                                            noBond_sign_cross = noBond_height
-
-                                            if len(noBond_freq) >= 2:
-                                                noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
-
-                                            # Wavelength calculations
-                                            Wavelength(wavelength)
-
-                                            if len(wavelength) >= 2:
-                                                wavelength_avg, wavelength_stdev = Stats(wavelength)
-
-                                            # Calculate points to graph at once
-                                            if points_per_period_flag:
-                                                graph_max = int(1.4*len(noBond_measurements))
-                                                points_per_period_flag = False
-
-                                        # Update period counter
-                                        noBond_wave_counter += 0.5
-
-                                    noBond_half_period = []
-
-                            noBond_half_period.append(noBond_height)
-                            noBond_rolling_array.pop(0)
-
-                            # BOND
-                            # Not an empty array
-                            if len(Bond_half_period) >= 1:
-                                if Bond_anti_ripple != 0:
-                                    if Bond_anti_ripple > anti_ripple:
-                                        Bond_anti_ripple = 0
-                                    else:
-                                        Bond_anti_ripple += 1
-                                
-                                # New zero crossing found
-                                if Bond_measurements[-1] * Bond_height < 0 and Bond_anti_ripple == 0 or Bond_height == 0:
-                                    Bond_anti_ripple = 1
-                                    # Ignore first wave
-                                    if Bond_first_wave == True:
-                                        if noBond_first_wave == False: # No Bond should already be done with its first wave
-                                            Bond_first_wave = False
-                                            Bond_prev_time = ttime
-                                    else:
-                                        # Peak-Peak
-                                        Bond_max_height, Bond_min_height = PP(Bond_half_period, Bond_max_height, Bond_min_height, Bond_pp)
-                                        
-                                        if len(Bond_pp) >= 2:
-                                            Bond_pp_avg, Bond_pp_stdev = Stats(Bond_pp)
-
-                                        # Frequency
-                                        if Bond_wave_counter % 1 == 0.5:
-                                            Freq(Bond_wave_counter, ttime, Bond_prev_time, Bond_freq)
-                                            Bond_prev_time = ttime
-                                        
-                                        # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
-                                        else:
-                                            time_diff = ttime - noBond_prev_time
-                                            Bond_sign_cross = Bond_height
-                                        
-                                        if len(Bond_freq) >= 2:
-                                            Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)
-                                        
-                                        # Update period counter
-                                        Bond_wave_counter += 0.5
-                                        graph_update = True
-                                        #print(Bond_wave_counter)
-
-                                    Bond_half_period = []
-
-                            Bond_half_period.append(Bond_height)
-                            Bond_rolling_array.pop(0)
-
-                            
-
-                            # START GRAPH AND INTERFACE
-                            Bond_measurements.append(Bond_height)
-                            noBond_measurements.append(noBond_height)
-                            time_csv.append(ttime)
-
-                            if graph_update:
-                                Bond_line.set_xdata(time_csv)
-                                Bond_line.set_ydata(Bond_measurements)
-                                
-                                noBond_line.set_xdata(time_csv)
-                                noBond_line.set_ydata(noBond_measurements)
-
-                                Bond_axis.relim()
-                                Bond_axis.autoscale_view()
-                                Bond_canvas.draw()
-                                Bond_canvas.flush_events() # Update data
-
-                                noBond_axis.relim()
-                                noBond_axis.autoscale_view()
-                                noBond_canvas.draw()
-                                noBond_canvas.flush_events() 
-
-                                # Update pending tasks
-                                window.update_idletasks()
-                                window.update()
-
-                                graph_update = False
-
-                                if len(time_csv) >= graph_max:
-                                    Bond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
-                                    noBond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
-
-                    # Store zero levelings
-                    elif line.find('Zero levels') != -1:
-                        data_zero = line.split(',')
-                        noBond_zero_lvl = float(data_zero[1])
-                        Bond_zero_lvl = float(data_zero[2])
-
-                        print(line)
-                        winsound.Beep(350,500)
-                        
-                    # Ask for total number of crests
-                    elif line.find('Ambient humidity') != -1:
-                        if crest_flag:
-                            crests = int(input('\nCrests between sensors: '))
-                            crest_flag = False
-                        else:
-                            winsound.Beep(350,500)
-                            print(line)
-                        
-                    else: print(line)
-                    
-
-        except KeyboardInterrupt:
-            print("Deteniendo la lectura de datos.")
+    try:
+        with open(csv_filename, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            # Escribe los encabezados del archivo CSV
+            writer.writerow(["Time (s)", "Accel_x (m/s2)", "Accel_y (m/s2)", "Accel_z (m/s2)", "RPM", "Humidity (percentage)", "Amb_Temp (C)", "Water_Temp (C)", "Motor_Temp (C)", "noBond_height 1 (mm)", "Bond_height 2 (mm)"])
             
-        ser.close()
+            try:
+                while Bond_wave_counter < max_waves:
+                    try:
+                        if  ser.in_waiting > 0:
+                            # Read serial ard_port string
+                            line = ser.readline().decode('utf-8').strip()
+                            print(line)
+                            # Split the whole serial string into values
+                            data = line.split(',')
+
+                            # Right stage of Arduino code
+                            if len(data) == 11:
+                                
+                                # Escribe los datos en el archivo CSV
+                                writer.writerow(data)
+
+                                # Get time starting at zero
+                                if time_start_flag == True:
+                                    time_start_flag = False
+                                    time_start = float(data[0])
+
+                                # If at any point the current time is less than the starting time reset everything
+                                if float(data[0]) < time_start:
+                                    time_start = float(data[0])
+                                    noBond_first_wave = True
+                                    Bond_first_wave = True
+                                    noBond_half_period = []
+                                    noBond_wave_counter = 0
+                                    Bond_half_period = []
+                                    Bond_wave_counter = 0
+                                    noBond_pp = []
+                                    Bond_pp = []
+                                    noBond_freq = []
+                                    Bond_freq = []
+                                    wavelength = []
+                                
+                                # Get serial data into variables (offset made with real measurements)
+                                ttime = float(data[0]) - time_start
+                                noBond_height = float(data[9])
+                                Bond_height = float(data[10])
+                                
+                                # Update tkinter window
+                                Humidity_value = (float(data[5]))
+                                Humidity_valuetext.config(text = f"Humedad (%): {Humidity_value:.2f}")
+                                
+                                AmbTemp_value = (float(data[6]))
+                                AmbTemp_valuetext.config(text = f"Temperatura ambiente (°C): {AmbTemp_value:.2f}")
+                                
+                                WaterTemp_value = (float(data[7]))
+                                WaterTemp_valuetext.config(text = f"Temperatura del agua (°C): {WaterTemp_value:.2f}")
+
+                                MotorTemp_value = (float(data[8]))
+                                MotorTemp_valuetext.config(text = f"Temperatura del motor (°C): {MotorTemp_value:.2f}")
+
+                                AngularVelocity_value = (float(data[4]))
+                                AngularVelocity_valuetext.config(text = f"Velocidad angular (rpm): {AngularVelocity_value:.2f}")
+
+                                noBond_pp_avg_text.config(text = f"No Bond Peak-Peak Avg (mm): {noBond_pp_avg:.2f}")
+                                noBond_pp_stdev_text.config(text = f"No Bond Peak-Peak StDev (mm): {noBond_pp_stdev:.2f}")
+
+                                Bond_pp_avg_text.config(text = f"Bond Peak-Peak Avg (mm): {Bond_pp_avg:.2f}")
+                                Bond_pp_stdev_text.config(text = f"Bond Peak-Peak StDev (mm): {Bond_pp_stdev:.2f}")
+
+                                noBond_freq_avg_text.config(text = f"No Bond Frequency Avg (Hz): {noBond_freq_avg:.3f}")
+                                noBond_freq_stdev_text.config(text = f"No Bond Frequency StDev (Hz): {noBond_freq_stdev:.3f}")
+                                
+                                Bond_freq_avg_text.config(text = f"Bond Frequency Avg (Hz): {Bond_freq_avg:.3f}")
+                                Bond_freq_stdev_text.config(text = f"Bond Frequency StDev (Hz): {Bond_freq_stdev:.3f}")
+
+                                wavelength_avg_text.config(text = f"Wavelength Avg (m): {wavelength_avg:.3f}")
+                                wavelength_stdev_text.config(text = f"Wavelength StDev (m): {wavelength_stdev:.3f}")
+
+                                wave_number_text.config(text = f"Wave number: {int(Bond_wave_counter)}")
+
+
+                                # Add a new measurement
+                                noBond_rolling_array.append(noBond_height)
+                                Bond_rolling_array.append(Bond_height)
+                                    
+                                if len(noBond_rolling_array) == rolling_window:
+                                    # Update heights to reflect rolling averages
+                                    noBond_height = statistics.mean(noBond_rolling_array)
+                                    Bond_height = statistics.mean(Bond_rolling_array)
+                                    
+                                
+                                    # NO BOND
+                                    # Not an empty array
+                                    if len(noBond_half_period) >= 1:
+                                        if noBond_anti_ripple != 0:
+                                            if noBond_anti_ripple > anti_ripple:
+                                                noBond_anti_ripple = 0
+                                            else:
+                                                noBond_anti_ripple += 1
+                                            
+                                        # New zero crossing found
+                                        if noBond_half_period[-1] * noBond_height < 0 and noBond_anti_ripple == 0 or noBond_height == 0:
+                                            noBond_anti_ripple += 1
+                                            # Ignore first wave
+                                            if noBond_first_wave == True:
+                                                noBond_first_wave = False
+                                                noBond_prev_time = ttime
+                                                noBond_sign_cross = noBond_height
+                                            else:
+                                                # Peak-Peak
+                                                noBond_max_height, noBond_min_height = PP(noBond_half_period, noBond_max_height, noBond_min_height, noBond_pp)
+                                                
+                                                if len(noBond_pp) >= 2:
+                                                    noBond_pp_avg, noBond_pp_stdev = Stats(noBond_pp)
+
+                                                # Frequency
+                                                if noBond_wave_counter % 1 == 0.5: # Only once per period (non integers)
+                                                    Freq(noBond_wave_counter, ttime, noBond_prev_time, noBond_freq)
+                                                    noBond_prev_time = ttime
+                                                    noBond_sign_cross = noBond_height
+
+                                                    if len(noBond_freq) >= 2:
+                                                        noBond_freq_avg, noBond_freq_stdev = Stats(noBond_freq)
+
+                                                    # Wavelength calculations
+                                                    Wavelength(wavelength)
+
+                                                    if len(wavelength) >= 2:
+                                                        wavelength_avg, wavelength_stdev = Stats(wavelength)
+
+                                                    # Calculate points to graph at once
+                                                    if points_per_period_flag:
+                                                        graph_max = int(1.4*len(noBond_measurements))
+                                                        points_per_period_flag = False
+
+                                                # Update period counter
+                                                noBond_wave_counter += 0.5
+
+                                            noBond_half_period = []
+
+                                    noBond_half_period.append(noBond_height)
+                                    noBond_rolling_array.pop(0)
+
+                                    # BOND
+                                    # Not an empty array
+                                    if len(Bond_half_period) >= 1:
+                                        if Bond_anti_ripple != 0:
+                                            if Bond_anti_ripple > anti_ripple:
+                                                Bond_anti_ripple = 0
+                                            else:
+                                                Bond_anti_ripple += 1
+                                        
+                                        # New zero crossing found
+                                        if Bond_measurements[-1] * Bond_height < 0 and Bond_anti_ripple == 0 or Bond_height == 0:
+                                            Bond_anti_ripple = 1
+                                            # Ignore first wave
+                                            if Bond_first_wave == True:
+                                                if noBond_first_wave == False: # No Bond should already be done with its first wave
+                                                    Bond_first_wave = False
+                                                    Bond_prev_time = ttime
+                                            else:
+                                                # Peak-Peak
+                                                Bond_max_height, Bond_min_height = PP(Bond_half_period, Bond_max_height, Bond_min_height, Bond_pp)
+                                                
+                                                if len(Bond_pp) >= 2:
+                                                    Bond_pp_avg, Bond_pp_stdev = Stats(Bond_pp)
+
+                                                # Frequency
+                                                if Bond_wave_counter % 1 == 0.5:
+                                                    Freq(Bond_wave_counter, ttime, Bond_prev_time, Bond_freq)
+                                                    Bond_prev_time = ttime
+                                                
+                                                # No Bond has had first crossing (Bond comes after), calculates time diff at Bond zero crossing
+                                                else:
+                                                    time_diff = ttime - noBond_prev_time
+                                                    Bond_sign_cross = Bond_height
+                                                
+                                                if len(Bond_freq) >= 2:
+                                                    Bond_freq_avg, Bond_freq_stdev = Stats(Bond_freq)
+                                                
+                                                # Update period counter
+                                                Bond_wave_counter += 0.5
+                                                graph_update = True
+                                                #print(Bond_wave_counter)
+
+                                            Bond_half_period = []
+
+                                    Bond_half_period.append(Bond_height)
+                                    Bond_rolling_array.pop(0)
+
+                                    
+
+                                    # START GRAPH AND INTERFACE
+                                    Bond_measurements.append(Bond_height)
+                                    noBond_measurements.append(noBond_height)
+                                    time_csv.append(ttime)
+
+                                    if graph_update:
+                                        Bond_line.set_xdata(time_csv)
+                                        Bond_line.set_ydata(Bond_measurements)
+                                        
+                                        noBond_line.set_xdata(time_csv)
+                                        noBond_line.set_ydata(noBond_measurements)
+
+                                        Bond_axis.relim()
+                                        Bond_axis.autoscale_view()
+                                        Bond_canvas.draw()
+                                        Bond_canvas.flush_events() # Update data
+
+                                        noBond_axis.relim()
+                                        noBond_axis.autoscale_view()
+                                        noBond_canvas.draw()
+                                        noBond_canvas.flush_events() 
+
+                                        # Update pending tasks
+                                        window.update_idletasks()
+                                        window.update()
+
+                                        graph_update = False
+
+                                        if len(time_csv) >= graph_max:
+                                            Bond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
+                                            noBond_axis.set_xlim(time_csv[-graph_max], time_csv[-1])
+
+                            # --- START MOTOR ---
+                            elif data[0] == "Zeros ready":
+        ##                        ser.close()
+        ##                        client.connect()
+        ##                        client.write_register(0x0001, 1, device_id=SLAVE)
+        ##                        client.close()
+        ##                        ser = serial.Serial(ard_port, baudrate, timeout=0.5)
+                                print('Start drive')
+                                
+                            # Store zero levelings
+                            elif line.find('Zero levels') != -1:
+                                data_zero = line.split(',')
+                                noBond_zero_lvl = float(data_zero[1])
+                                Bond_zero_lvl = float(data_zero[2])
+
+                                print(line)
+                                # winsound.Beep(350,500)
+                                
+                            # Ask for total number of crests
+                            elif line.find('Ambient humidity') != -1:
+                                if crest_flag:
+                                    crests = int(input('\nCrests between sensors: '))
+                                    crest_flag = False
+                                else:
+                                    #winsound.Beep(350,500)
+                                    print(line)
+                                
+                            else: print(line)
+                            
+                        except serial.SerialException as e:
+                            print(f"Serial error: {e}")
+                            # Try to reconnect
+                            try:
+                                ser.close()
+                                ser = serial.Serial(ard_port, baudrate, timeout=1)
+                                print("Reconnected after error")
+                            except:
+                                print("Failed to reconnect")
+                                break
+                        except UnicodeDecodeError as e:
+                            print(f"Decoding error: {e}")
+                            continue
+                    
+                except KeyboardInterrupt:
+                    print("Deteniendo la lectura de datos.")
+                        
+            except Exception as e:
+                print(f"File error: {e}")
+
+
+            
+        # ser.close()
         # Correct for wrong number of crests - ALWAYS MAKE CORR POSITIVE
         if input('\nWas the wavelength correct? (y/n): ') == 'n':
             corr = int(input('How many crests do you need to add?: '))
@@ -606,6 +715,10 @@ def Update_graphs():
 
             wavelength_avg, wavelength_stdev = Stats(wavelength)
 
+    # --- STOP MOTOR ---
+    # ser.close()
+    
+        
     # Save results to csv file
     if (input('\nSave data? (y/n): ') == 'y'):
         results_file = open(csv_path + 'Results.csv', mode='a')
@@ -623,5 +736,7 @@ def Update_graphs():
 
 
 # RUN THE GUI
-window.after(0, Update_graphs)
+##while True:
+##    Update_graphs()
+window.after(10, Update_graphs)
 window.mainloop()
