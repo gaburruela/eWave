@@ -100,11 +100,13 @@ float s1_voltage;
 float s1_distance = 0;
 float s1_distance_calibrated = 0;
 float s1_zero_lvl = 0;
+float s1_zero_lvl_check = 0;
 // Sensor 2 variables
 float s2_voltage;
 float s2_distance = 0;
 float s2_distance_calibrated = 0;
 float s2_zero_lvl = 0;
+float s2_zero_lvl_check = 0;
 
 // Manual mapping
 // Not Bond
@@ -127,6 +129,38 @@ const float s2_slope = 1.031985294;
 const float s2_intercept = -1.66541176;
 
 
+// Automating code
+// Zero leveling
+int zero_checks = 0; // Amount of zero measurements
+int zero_checks_limit = 5; // Limit of zero measurements to stop zero leveling
+const int zero_sample = 3; // 
+float s1_zero_measurements[zero_sample];
+float s2_zero_measurements[zero_sample];
+int zero_measurements_index;
+float sum1 = 0;
+float s1_zero_measurements_avg = 0;
+float s1_stdv = 4;
+float sum2 = 0;
+float s2_zero_measurements_avg = 0;
+float s2_stdv = 4;
+bool zero_leveled = false;
+bool water_moving = false;
+
+// Inductive measurements
+int first_measurements_inductive = 0;
+bool rpm_measured = true;
+const int angular_velocity_checks = 3;
+float average_velocities[angular_velocity_checks];
+float average_velocities_sorted[angular_velocity_checks];
+float final_average_velocity;
+int average_velocities_counter = 0;
+
+// Hummidity measurements
+bool humidity_measured = false;
+
+int start_process = 0;
+bool bandera_inicio = false;
+
 // EXTERNAL FUNCTIONS
 // Manual mapping - get decimals - sensor is just which of the 2 sensors we're mapping
 float mapping(float signal, int sensor) {
@@ -139,77 +173,234 @@ float mapping(float signal, int sensor) {
   return;
 }
 
+// Sorting to calculate median
+void sortArray(float input[], float output[], int size) {
+  if (input == output) return;
+
+  for (int i = 0; i < size; i++) {
+    output[i] = input[i];
+  }
+
+  for (int i = 0; i < size - 1; i++) {
+    for (int j = 0; j < size - i - 1; j++) {
+      if (output[j] > output[j + 1]) {
+        float temp = output[j];
+        output[j] = output[j + 1];
+        output[j + 1] = temp;
+      }
+    }
+  }
+}
 
 // Zero-leveling
 void Zero_Leveling() {
-  s1_zero_lvl = 0; // Hacer reset por favor!
-  s2_zero_lvl = 0;
-  for (int i = 0; i < med_zero; i++) {
-    s1_voltage = analogRead(s1);
-    s2_voltage = analogRead(s2);
-    //Serial.println(s2_voltage);
-    s1_zero_lvl += mapping(s1_voltage, 1);
-    s2_zero_lvl += mapping(s2_voltage, 2);
-    delay(50);
+  zero_leveled = false;
+  zero_checks = 0;
+  while (true) {
+    if (zero_checks >= zero_checks_limit){ // Stops zero leveling if the motor is on
+      zero_leveled = false;
+      water_moving = true;
+      memset(s1_zero_measurements, 0, sizeof(s1_zero_measurements)); // Llena el array con 0
+      memset(s2_zero_measurements, 0, sizeof(s2_zero_measurements)); // Llena el array con 0
+      s1_stdv = 0;
+      s2_stdv = 0;
+      zero_checks = 0;
+      break;
+    }
+
+    s1_zero_lvl = 0; // Hacer reset por favor!
+    s2_zero_lvl = 0; 
+
+    for (int i = 0; i < med_zero; i++) {
+      s1_voltage = analogRead(s1);
+      s2_voltage = analogRead(s2);
+      //Serial.println(s2_voltage);
+      s1_zero_lvl += mapping(s1_voltage, 1);
+      s2_zero_lvl += mapping(s2_voltage, 2);
+      delay(50);
+    }
+    
+
+    // Zero level setting - Averages
+    s1_zero_lvl /= med_zero;
+    s2_zero_lvl /= med_zero;
+    // Calibrate sensors
+    s1_zero_lvl = (s1_zero_lvl - s1_intercept) / s1_slope;
+    s2_zero_lvl = (s2_zero_lvl - s2_intercept) / s2_slope;
+
+    s1_zero_measurements[zero_measurements_index] = s1_zero_lvl;
+    s2_zero_measurements[zero_measurements_index] = s2_zero_lvl;
+
+    Serial.print("Zero levels,");
+    Serial.print(s1_zero_lvl);
+    Serial.print(",");
+    Serial.println(s2_zero_lvl);
+
+    // Calculating standard deviation
+    sum1 = 0;
+    s1_zero_measurements_avg = 0;
+    sum2 = 0;
+    s2_zero_measurements_avg = 0;
+
+    for (int i = 0; i < zero_sample; i++){
+      s1_zero_measurements_avg += s1_zero_measurements[i];
+      s2_zero_measurements_avg += s2_zero_measurements[i];
+    }
+
+    s1_zero_measurements_avg /= zero_sample;
+    s2_zero_measurements_avg /= zero_sample;
+    for (int i = 0; i < zero_sample; i++){
+      sum1 += pow(s1_zero_measurements[i] - s1_zero_measurements_avg,2);
+      sum2 += pow(s2_zero_measurements[i] - s2_zero_measurements_avg,2);
+    }
+    
+    s1_stdv = sqrt(sum1/zero_sample); 
+    s2_stdv = sqrt(sum2/zero_sample); 
+    
+    // Zero level stabilized 
+    if (s1_stdv <= 0.6 && s2_stdv <= 0.6){
+      memset(s1_zero_measurements, 0, sizeof(s1_zero_measurements)); // Llena el array con 0
+      memset(s2_zero_measurements, 0, sizeof(s2_zero_measurements)); // Llena el array con 0
+      s1_stdv = 0;
+      s2_stdv = 0;
+      zero_checks = 0;
+      zero_leveled = true;
+      water_moving = false;
+      break;
+    }
+    
+    zero_checks += 1;
+    zero_measurements_index += 1;
+
+    if (zero_measurements_index >= 3){
+      zero_measurements_index = 0;
+    }
   }
-  
-  // Zero level setting - Averages
-  s1_zero_lvl /= med_zero;
-  s2_zero_lvl /= med_zero;
-
-  // Calibrate sensors
-  s1_zero_lvl = (s1_zero_lvl - s1_intercept) / s1_slope;
-  s2_zero_lvl = (s2_zero_lvl - s2_intercept) / s2_slope;
-
-  Serial.print("Zero levels,");
-  Serial.print(s1_zero_lvl);
-  Serial.print(",");
-  Serial.println(s2_zero_lvl);
 }
 
 // Inductive
 void Inductive() {
+
+  ind_firstPulseDetected = false; // Flag to check if the first pulse has been detected (only used once)
+  ind_lastPulseTime = 0; // Time of the last detected signal
+  ind_currentPulseTime = 0; // Time of the current detected signal
+  ind_timeInterval = 0; // Time between last and current detected signals
+
+  ind_freq = 0; // Value to store measurements
+  ind_avg_freq = 0;
+  ind_counter = 1;
+
+  first_measurements_inductive = 0;
+  memset(angular_velocity_checks, 0, sizeof(angular_velocity_checks)); // Llena el array con 0
+  memset(angular_velocity_checks, 0, sizeof(angular_velocity_checks)); // Llena el array con 0
+  final_average_velocity;
+  average_velocities_counter = 0;
+
   // Check the sensor pin
-  if (digitalRead(ind_pin) == HIGH) { // LOW for infrared, HIGH for inductive
-    ind_currentPulseTime = millis(); // Store current time
-
-    // If this is the first pulse detected, initialize the ind_lastPulseTime
-    if (!ind_firstPulseDetected) {
-      ind_firstPulseDetected = true;
-      ind_lastPulseTime = ind_currentPulseTime; // Set the initial pulse time
-      }
-    
-    // Any subsequent pulse
-    else {
-      // Calculate time between pulses
-      ind_timeInterval = ind_currentPulseTime - ind_lastPulseTime;
-      // Update the last pulse time
-      ind_lastPulseTime = ind_currentPulseTime;
-
-      // Calculate frequency and update ind_freq
-      ind_freq += 1000.0 / ind_timeInterval; // Frecuency in Hz
-
-      //Still in-bounds
-      if (ind_counter < ind_measurements) {          
-        ind_counter += 1;
-      }
-      // Out of bounds
-      else {
-        ind_counter = 1; // Reset measurement index
-
-        // Take the average of all measurements
-        ind_avg_freq = ind_freq / ind_measurements;
-        ind_avg_freq = ind_avg_freq * 60; // convert to rpm
-
-        ind_freq = 0; // Reset frequency variable
-
-        // Print results
-        Serial.println("Average angular velocity:");
-        Serial.println(ind_avg_freq);
+  while (true){
+    if (digitalRead(ind_pin) == HIGH){
+      first_measurements_inductive += 1;
+      if (first_measurements_inductive == 3){
+        first_measurements_inductive == 0;
+        break;
       }
     }
-    delay(200); // Delay to avoid rapid measurements
+
+    if(Serial.available() > 0){
+      start_process = Serial.parseInt();
+      if (start_process == 1){
+        bandera_inicio = false;
+        water_moving = false;
+        rpm_measured = false;
+        humidity_measured = false;
+        break;
+      }
+    }
   }
+
+  while (true){
+    if(Serial.available() > 0){
+      start_process = Serial.parseInt();
+      if (start_process == 1){
+        bandera_inicio = false;
+        water_moving = false;
+        rpm_measured = false;
+        humidity_measured = false;
+        break;
+      }
+    }
+
+    if (digitalRead(ind_pin) == HIGH) { // LOW for infrared, HIGH for inductive
+      ind_currentPulseTime = millis(); // Store current time
+      
+      // If this is the first pulse detected, initialize the ind_lastPulseTime
+      if (!ind_firstPulseDetected) {
+        ind_firstPulseDetected = true;
+        ind_lastPulseTime = ind_currentPulseTime; // Set the initial pulse time
+        }
+      
+      // Any subsequent pulse
+      else {
+        // Calculate time between pulses
+        ind_timeInterval = ind_currentPulseTime - ind_lastPulseTime;
+        // Update the last pulse time
+        ind_lastPulseTime = ind_currentPulseTime;
+
+        // Calculate frequency and update ind_freq
+        ind_freq += 1000.0 / ind_timeInterval; // Frecuency in Hz
+
+        //Still in-bounds
+        if (ind_counter < ind_measurements) {          
+          ind_counter += 1;
+        }
+        // Out of bounds
+        else {
+          ind_counter = 1; // Reset measurement index
+
+          // Take the average of all measurements
+          ind_avg_freq = ind_freq / ind_measurements;
+          ind_avg_freq = ind_avg_freq * 60; // convert to rpm
+
+          
+          ind_freq = 0; // Reset frequency variable
+
+          // Print results
+          Serial.print("Average angular velocity,");
+          Serial.println(ind_avg_freq);
+          average_velocities[average_velocities_counter] = ind_avg_freq;
+          
+          average_velocities_counter += 1;
+
+          if (average_velocities_counter == angular_velocity_checks){
+            average_velocities_counter = 0;
+
+            sortArray(average_velocities, average_velocities_sorted, angular_velocity_checks);
+
+            if (angular_velocity_checks%2 == 0){
+              ind_avg_freq = ((average_velocities_sorted[(angular_velocity_checks-1)/2])+(average_velocities_sorted[((angular_velocity_checks-1)/2)+1]))/2;
+            }
+            
+            if (angular_velocity_checks%2 == 1){
+              ind_avg_freq = average_velocities_sorted[(angular_velocity_checks)/2];
+            }
+            rpm_measured = true;
+            Serial.print("Final average angular velocity,");
+            Serial.println(ind_avg_freq);
+            break;
+            
+          }
+          
+          // Serial.println(average_velocities_counter);
+        }
+        
+
+      }
+      delay(200); // Delay to avoid rapid measurements
+    }
+
+  }
+
+
 }
 
 // Humidity
@@ -218,12 +409,12 @@ void Humidity() {
   humid = DHT.getHumidity();
   amb_temp = DHT.getTemperature();
   delay(2000);
-
   // Print results
-  Serial.println("Ambient humidity:");
-  Serial.println(humid);
-  Serial.println("Ambient temperature:");
+  Serial.print("Ambient humidity,");
+  Serial.print(humid);
+  Serial.print(",Ambient temperature,");
   Serial.println(amb_temp);
+  humidity_measured = true;
 }
 
 // All the measurements
@@ -258,7 +449,7 @@ void All_Measurements() {
   
   // THERMISTORS
   //Lectura del Arduino
-  SensorValue_W = analogRead(Term_Water);
+  SensorValue_W = 500;
   V_O_W = SensorValue_W * V_ref / 1023;
 
   SensorValue_M = analogRead(Term_Motor);
@@ -368,7 +559,6 @@ void CSV_Results() {
   Serial.println(s2_zero_lvl - s2_distance_calibrated);
 }
 
-
 void setup() {
   Serial.begin(115200);
   Serial.println("There's communication!");
@@ -388,6 +578,7 @@ void setup() {
 
 	// set filter bandwidth to 21 Hz
 	mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+
 
 	//delay(100);
 
@@ -415,67 +606,54 @@ void setup() {
   pinMode(button_rst, INPUT);
 }
 
-
-
-
 void loop() {
-  // Button state change
-  if (digitalRead(button_pin) == 1) {
-    button_counter += 1;
-    if (button_counter == 1) {
-      delay(7000); // 7 senconds to change button state - Zero leveling sucks
-    }
-    else {
-      delay(3000); // 2 seconds to change button state
+
+  if(Serial.available() > 0){
+    start_process = Serial.parseInt();
+    if (start_process == 1){
+      bandera_inicio = false;
+      water_moving = false;
     }
   }
 
-  // Button Reset
-  if (digitalRead(button_rst) == 1) {
-    button_counter = 0;
-    delay(2000); // 2 seconds to change button state
+  while(!bandera_inicio){
+    start_process = Serial.parseInt();
+    if (start_process == 1){
+      start_process = 0;
+      bandera_inicio = true;
+      zero_leveled = false;
+      break;
+    }
   }
-
-
-  // Run the actual codes
-  if (button_counter == 0) {
+  
+  // Inicia proceso al escribir 1 en la terminal.
+  if (!zero_leveled && bandera_inicio == true && water_moving == false){
     Zero_Leveling();
+    if (zero_leveled){
+      Serial.println("Zeros ready");
+      Inductive();
+      if (rpm_measured){
+        rpm_measured = false;
+        Humidity();
+        }
+    }
   }
 
-  else {
-    if (button_counter == -1) {
-      delay(100); // Just chill for a bit
-    }
-    else {
-      switch (button_counter % 3) {
-        case 1:
-          Inductive();
-          break;
-        
-        case 2:
-          Humidity();
-          break;
-        
-        case 0:
-          // UNIFORM INTERVALS
-          millis_current = millis();
+  if (humidity_measured) {
+    //humidity_measured = false;
+    // UNIFORM INTERVALS
+    millis_current = millis();
+    
+    // Take new measurements only if inside the time interval
+    if (millis_current - millis_previous >= time_interval) {
+      
+      millis_previous = millis_current;
+      All_Measurements();
 
-          // Take new measurements only if inside the time interval
-          if (millis_current - millis_previous >= time_interval) {
-            millis_previous = millis_current;
-            All_Measurements();
-
-            // Print results to csv - With filter for if ultrasonics turn off
-            if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
-              //Print_Results();
-              CSV_Results();
-            }
-          }
-          break;
-
-        default:
-          delay(100); // Just chill for a bit
-          break;
+      // Print results to csv - With filter for if ultrasonics turn off
+      if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
+        //Print_Results();
+        CSV_Results();
       }
     }
   }
