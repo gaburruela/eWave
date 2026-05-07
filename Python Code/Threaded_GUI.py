@@ -19,14 +19,14 @@ import queue
 
 # SERIAL COMMUNICATION
 
-ard_port = 'COM6'  # COM3 para Andrés / COM4 para Daniel / COM6 para Gabriel
+ard_port = 'COM3'  # COM3 para Andrés / COM4 para Daniel / COM6 para Gabriel
 baudrate = 115200
 
 winsound.Beep(350,500)
 
 # VFD Control Configuration
 client = ModbusSerialClient( 
-    port='COM8',  # Revisar puerto: COM4 para Andrés, COM8 Gabriel
+    port='COM4',  # Revisar puerto: COM4 para Andrés, COM8 Gabriel
     baudrate=2400,
     parity='N',
     stopbits=1,
@@ -71,8 +71,8 @@ data += "\r\n"
 ser.write(data.encode())
 
 #csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
-# csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
-csv_path = r'C:\Users\Gabu\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Gabriel
+csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
+# csv_path = r'C:\Users\Gabu\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Gabriel
 
 csv_filename = csv_path + motor_freq + ' Hz - ' + crank_pos + ' mm.csv'
 

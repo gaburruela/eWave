@@ -9,7 +9,7 @@ import time
 # o1-03 gives units, set at 0 for 0.01 Hz
 
 client = ModbusSerialClient( 
-    port='COM8',  # Revisar puerto
+    port='COM4',  # Revisar puerto
     baudrate=2400,
     parity='N',
     stopbits=1,
@@ -22,30 +22,32 @@ client.connect()
 
 SLAVE = 1
 
-# # --- Set frequency (30 Hz) ---
-# freq = 1500
-# time.sleep(1)
-# client.write_register(0x0002, 1500, device_id=SLAVE)
-# print('Frequency set')
+# --- Set frequency (30 Hz) ---
+freq = 1500
+time.sleep(1)
+client.write_register(0x0002, 1500, device_id=SLAVE)
+print('Frequency set')
 
 
-# time.sleep(1)
-# # --- RUN forward ---
-# client.write_register(0x0001, 1, device_id=SLAVE)
-# print('Start drive')
+time.sleep(1)
+# --- RUN forward ---
+client.write_register(0x0001, 1, device_id=SLAVE)
+print('Start drive')
 
 
-# time.sleep(10)
+time.sleep(10)
 
-# client.write_register(0x0002, 2000, device_id=SLAVE)
-# print('Frequency change')
+client.write_register(0x0002, 2000, device_id=SLAVE)
+print('Frequency change')
 
-# time.sleep(10)
+time.sleep(10)
 
 # --- STOP ---
 client.write_register(0x0001, 0, device_id=SLAVE)
 print('Stop drive')
 time.sleep(1)
+
+client.close()
 
 # Reading registers for error detection
 # 0021 Fault description 1
@@ -60,7 +62,7 @@ time.sleep(1)
 # time.sleep(1)
 
 
-client.close()
+# client.close()
 
 # --------------------------------------------------------------------------------
 
@@ -107,7 +109,7 @@ client.close()
 
 # # --- Client configuration (UNCHANGED) ---
 # client = ModbusSerialClient(
-#     port='COM8',  # Revisar puerto
+#     port='COM4',  # Revisar puerto
 #     baudrate=2400,
 #     parity='N',
 #     stopbits=1,

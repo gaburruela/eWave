@@ -18,7 +18,7 @@ SLAVE = 1
 # --- Set frequency (30 Hz) ---
 freq = 1500
 time.sleep(1)
-client.write_register(0x0002, 2000, device_id=SLAVE)
+client.write_register(0x0002, 1500, device_id=SLAVE)
 print('Frequency set')
 
 
