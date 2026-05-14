@@ -23,6 +23,11 @@ SLAVE = 1
 
 ser = serial.Serial(ARDPORT, BAUDRATE)
 
+data = "1"
+data += "\r\n"
+ser.write(data.encode())
+time.sleep(1)
+
 data_queue = queue.Queue()
 
 # --- THREAD FUNCTION ---
@@ -45,17 +50,17 @@ print('Frequency set')
 
 def update_gui():
     if not data_queue.empty():
-        data = int(data_queue.get())
+        data = data_queue.get()
         # print('Data type: ', type(data))
         label.config(text=data)
-        if data == 0:
+        if "Zeros ready" in data:
             # --- RUN forward ---
             client.write_register(0x0001, 1, device_id=SLAVE)
             print('Start drive')
-        if data == 5:
-            # --- STOP ---
-            client.write_register(0x0001, 0, device_id=SLAVE)
-            print('Stop drive')
+        # if data == 5:
+        #     # --- STOP ---
+        #     client.write_register(0x0001, 0, device_id=SLAVE)
+        #     print('Stop drive')
 
     root.after(100, update_gui)
 
