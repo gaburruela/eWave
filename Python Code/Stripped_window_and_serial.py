@@ -43,26 +43,27 @@ threading.Thread(target=read_serial_thread, daemon=True).start()
 root = tk.Tk()
 label = tk.Label(root, text="Waiting...", font=("Arial", 16))
 label.pack(padx=20, pady=20)
+root.geometry('400x400')
 
-# --- Set frequency (20 Hz) ---
-client.write_register(0x0002, 2000, device_id=SLAVE)
-print('Frequency set')
+# # --- Set frequency (20 Hz) ---
+# client.write_register(0x0002, 2000, device_id=SLAVE)
+# print('Frequency set')
 
 def update_gui():
     if not data_queue.empty():
         data = data_queue.get()
         # print('Data type: ', type(data))
         label.config(text=data)
-        if "Zeros ready" in data:
-            # --- RUN forward ---
-            client.write_register(0x0001, 1, device_id=SLAVE)
-            print('Start drive')
+        # if "Zeros ready" in data:
+        #     # --- RUN forward ---
+        #     client.write_register(0x0001, 1, device_id=SLAVE)
+        #     print('Start drive')
         # if data == 5:
         #     # --- STOP ---
         #     client.write_register(0x0001, 0, device_id=SLAVE)
         #     print('Stop drive')
 
-    root.after(100, update_gui)
+    root.after(30, update_gui)
 
 update_gui()
 root.mainloop()
