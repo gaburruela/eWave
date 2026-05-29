@@ -68,7 +68,7 @@ class Sensor:
             self.freq.append(1 / (current_time - self.prev_time))
 
 
-    def calculate_stats(self, values):
+    def compute_stats(self, values):
 
         avg = statistics.mean(values)
         stdev = statistics.stdev(values)
@@ -77,7 +77,7 @@ class Sensor:
 
 # SERIAL COMMUNICATION
 
-port = 'COM4'  # COM3 para Andrés / COM4 para Daniel / COM6 para Gabriel
+port = 'COM6'  # COM3 para Andrés / COM4 para Daniel / COM6 para Gabriel
 baudrate = 115200
 
 winsound.Beep(350,500)
@@ -101,9 +101,9 @@ if input('Are you sure? (y/n): ') == 'n':
 
 print('\nReady to start measurements!')
 
-csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
+# csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
 #csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
-# csv_path = r'C:\Users\Gabu\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Gabriel
+csv_path = r'C:\Users\Gabu\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Gabriel
 
 csv_filename = csv_path + motor_freq + ' Hz - ' + crank_pos + ' mm.csv'
 
@@ -130,57 +130,57 @@ AngularVelocity_value = 0
 
 
 
-# Variables for getting wave parameters
+# # Variables for getting wave parameters
 
-# Flags to ignore first wave
-noBond_first_wave = True
-Bond_first_wave = True
+# # Flags to ignore first wave
+# noBond_first_wave = True
+# Bond_first_wave = True
 
-# Flags to avoid multiple zero crossings
-noBond_anti_ripple = 0
-Bond_anti_ripple = 0
+# # Flags to avoid multiple zero crossings
+# noBond_anti_ripple = 0
+# Bond_anti_ripple = 0
 
 # Other flags
 time_start_flag = True
 
-# Store half a period of the wave
-noBond_half_period = []
-noBond_wave_counter = 0
-Bond_half_period = []
-Bond_wave_counter = 0
+# # Store half a period of the wave
+# noBond_half_period = []
+# noBond_wave_counter = 0
+# Bond_half_period = []
+# Bond_wave_counter = 0
 
-# Momentary variables
-# Peak-Peak
-noBond_max_height = 0
-noBond_min_height = 0
-Bond_max_height = 0
-Bond_min_height = 0
-# Frequency
-noBond_prev_time = 0
-Bond_prev_time = 0
-# Wavelength
-noBond_sign_cross = 0 # Just care about the sign
-Bond_sign_cross = 0 # Just care about the sign
-time_diff = 0
+# # Momentary variables
+# # Peak-Peak
+# noBond_max_height = 0
+# noBond_min_height = 0
+# Bond_max_height = 0
+# Bond_min_height = 0
+# # Frequency
+# noBond_prev_time = 0
+# Bond_prev_time = 0
+# # Wavelength
+# noBond_sign_cross = 0 # Just care about the sign
+# Bond_sign_cross = 0 # Just care about the sign
+# time_diff = 0
 
-# Store all parameters - Has no size cap
-noBond_pp = []
-Bond_pp = []
-noBond_freq = []
-Bond_freq = []
-wavelength = []
+# # Store all parameters - Has no size cap
+# noBond_pp = []
+# Bond_pp = []
+# noBond_freq = []
+# Bond_freq = []
+# wavelength = []
 
-# Store averages and standard deviations - Using all past data
-# Peak-Peak
-noBond_pp_avg = 0
-noBond_pp_stdev = 0
-Bond_pp_avg = 0
-Bond_pp_stdev = 0
-# Frequency
-noBond_freq_avg = 0
-noBond_freq_stdev = 0
-Bond_freq_avg = 0
-Bond_freq_stdev = 0
+# # Store averages and standard deviations - Using all past data
+# # Peak-Peak
+# noBond_pp_avg = 0
+# noBond_pp_stdev = 0
+# Bond_pp_avg = 0
+# Bond_pp_stdev = 0
+# # Frequency
+# noBond_freq_avg = 0
+# noBond_freq_stdev = 0
+# Bond_freq_avg = 0
+# Bond_freq_stdev = 0
 # Wavelength
 wavelength_avg = 0
 wavelength_stdev = 0
@@ -192,8 +192,8 @@ crests = 0
 
 # Rolling averages
 rolling_window = 5 # number of points to average
-noBond_rolling_array = [] # store first 5 measurements
-Bond_rolling_array = []
+# noBond_rolling_array = [] # store first 5 measurements
+# Bond_rolling_array = []
 
 # Others
 anti_ripple = 7 # crests to ignore
@@ -353,34 +353,34 @@ wave_number_text.place(x = xpos, rely = ystart + linespace*16, anchor = 'nw')
 
 # FUNCTION TIME! - FOR PARAMETERS
 
-# Return max and min
-def PP(half_period, max_height, min_height, pp):
-    # PEAK-PEAK
-    # Get new maximum or new minimum
-    if half_period[-1] > 0: max_height = max(half_period)
-    else: min_height = min(half_period)
+# # Return max and min
+# def PP(half_period, max_height, min_height, pp):
+#     # PEAK-PEAK
+#     # Get new maximum or new minimum
+#     if half_period[-1] > 0: max_height = max(half_period)
+#     else: min_height = min(half_period)
     
-    # Calculate peak-peak
-    if max_height != 0 and min_height != 0: # Both have been updated at least once
-        pp.append(max_height - min_height)
+#     # Calculate peak-peak
+#     if max_height != 0 and min_height != 0: # Both have been updated at least once
+#         pp.append(max_height - min_height)
 
-    return max_height, min_height
+#     return max_height, min_height
 
 
-def Freq(wave_counter, ttime, prev_time, freq):
-    # FREQUENCY
-    if ttime - prev_time != 0:
-        freq.append(1/(ttime - prev_time))
+# def Freq(wave_counter, ttime, prev_time, freq):
+#     # FREQUENCY
+#     if ttime - prev_time != 0:
+#         freq.append(1/(ttime - prev_time))
 
 
 def Wavelength(wavelength):
-    period = 1/noBond_freq[-1]
+    period = 1/noBond.freq[-1]
 
     # Add a full period per crest
     percentage = time_diff/period + (crests - 1)
 
     # Make sure phase is in sync - if not take away half a period
-    if noBond_sign_cross * Bond_sign_cross < 0:
+    if noBond.sign_cross * Bond.sign_cross < 0:
         percentage -= 0.5
 
     if abs(percentage) > 0.001:
@@ -712,10 +712,10 @@ def Update_graphs():
         # Name of the test
         results_file.write('\n' + motor_freq + ',' + crank_pos + ',')
         # Add the results
-        results_file.write(str(noBond_pp_avg) + ',' + str(noBond_pp_stdev) + ',')
-        results_file.write(str(Bond_pp_avg) + ',' + str(Bond_pp_stdev) + ',')
-        results_file.write(str(noBond_freq_avg) + ',' + str(noBond_freq_stdev) + ',')
-        results_file.write(str(Bond_freq_avg) + ',' + str(Bond_freq_stdev) + ',')
+        results_file.write(str(noBond.pp_avg) + ',' + str(noBond.pp_stdev) + ',')
+        results_file.write(str(Bond.pp_avg) + ',' + str(Bond.pp_stdev) + ',')
+        results_file.write(str(noBond.freq_avg) + ',' + str(noBond.freq_stdev) + ',')
+        results_file.write(str(Bond.freq_avg) + ',' + str(Bond.freq_stdev) + ',')
         results_file.write(str(wavelength_avg) + ',' + str(wavelength_stdev))
         results_file.close()
 
