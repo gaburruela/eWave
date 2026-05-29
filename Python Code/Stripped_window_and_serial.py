@@ -17,11 +17,18 @@ client = ModbusSerialClient(
     timeout=1
 )
 
-client.connect()
-SLAVE = 1
+# client.connect()
+# SLAVE = 1
 
 
 ser = serial.Serial(ARDPORT, BAUDRATE)
+
+time.sleep(2)
+
+data = "1"
+data += "\r\n"
+ser.write(data.encode())
+time.sleep(1)
 
 data_queue = queue.Queue()
 
@@ -38,30 +45,31 @@ threading.Thread(target=read_serial_thread, daemon=True).start()
 root = tk.Tk()
 label = tk.Label(root, text="Waiting...", font=("Arial", 16))
 label.pack(padx=20, pady=20)
+root.geometry('800x100')
 
-# --- Set frequency (20 Hz) ---
-client.write_register(0x0002, 2000, device_id=SLAVE)
-print('Frequency set')
+# # --- Set frequency (20 Hz) ---
+# client.write_register(0x0002, 2000, device_id=SLAVE)
+# print('Frequency set')
 
 def update_gui():
     if not data_queue.empty():
-        data = int(data_queue.get())
+        data = data_queue.get()
         # print('Data type: ', type(data))
         label.config(text=data)
-        if data == 0:
-            # --- RUN forward ---
-            client.write_register(0x0001, 1, device_id=SLAVE)
-            print('Start drive')
-        if data == 5:
-            # --- STOP ---
-            client.write_register(0x0001, 0, device_id=SLAVE)
-            print('Stop drive')
+        # if "Zeros ready" in data:
+        #     # --- RUN forward ---
+        #     client.write_register(0x0001, 1, device_id=SLAVE)
+        #     print('Start drive')
+        # if data == 5:
+        #     # --- STOP ---
+        #     client.write_register(0x0001, 0, device_id=SLAVE)
+        #     print('Stop drive')
 
-    root.after(100, update_gui)
+    root.after(30, update_gui)
 
 update_gui()
 root.mainloop()
 
 print('This is the end')
-client.write_register(0x0001, 0, device_id=SLAVE)
+# client.write_register(0x0001, 0, device_id=SLAVE)
 print('Stop drive')
