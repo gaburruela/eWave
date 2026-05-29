@@ -11,7 +11,7 @@ import time
 
 client = ModbusSerialClient(
     port='COM8',  # Revisar puerto
-    baudrate=2400,
+    baudrate=9600,
     parity='N',
     stopbits=1,
     bytesize=8,
@@ -44,11 +44,11 @@ print('Frequency set')
 client.write_register(0x0001, 1, device_id=SLAVE)
 print('Start drive')
 
-time.sleep(10)
+time.sleep(5)
 
-client.write_register(0x0002, 3000, device_id=SLAVE)
+# client.write_register(0x0002, 3000, device_id=SLAVE)
 
-time.sleep(10)
+# time.sleep(10)
 
 # --- STOP ---
 client.write_register(0x0001, 0, device_id=SLAVE)
