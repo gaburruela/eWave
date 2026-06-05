@@ -14,6 +14,9 @@ ser = serial.Serial(ARDPORT, BAUDRATE)
 
 time.sleep(2)
 
+ser.reset_input_buffer()   # discard anything already received
+ser.reset_output_buffer()  # optional
+
 data = "1"
 data += "\r\n"
 ser.write(data.encode())
@@ -28,6 +31,7 @@ def read_serial_thread():
         data = ser.readline().decode('utf-8').strip()
         ard_data_queue.put(data)
         print("Data: ", data)
+        # time.sleep(0.02)
 
 # --- VFD THREAD FUNCTION ---
 def command_VFD_thread():
@@ -83,6 +87,7 @@ counter = 0
 def update_gui():
     global counter
     if not ard_data_queue.empty():
+        print('data queue length: ', ard_data_queue.qsize())
         counter += 1
         data = ard_data_queue.get()
         # print('Data type: ', type(data))
@@ -94,8 +99,9 @@ def update_gui():
         #     # --- RUN forward ---
         #     vfd_data_queue.put(['start'])
 
-        # if counter >= 30:
+        if counter >= 30:
         #     vfd_data_queue.put(['stop'])
+            print('30 datapoints')
 
     root.after(20, update_gui)
 
