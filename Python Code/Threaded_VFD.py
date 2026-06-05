@@ -27,12 +27,13 @@ def read_serial_thread():
     while True:
         data = ser.readline().decode('utf-8').strip()
         ard_data_queue.put(data)
+        print("Data: ", data)
 
 # --- VFD THREAD FUNCTION ---
 def command_VFD_thread():
     client = ModbusSerialClient(
         port='COM8',  # Revisar puerto
-        baudrate=9600,
+        baudrate=2400,
         parity='N',
         stopbits=1,
         bytesize=8,
@@ -86,15 +87,15 @@ def update_gui():
         data = ard_data_queue.get()
         # print('Data type: ', type(data))
         label.config(text=data)
-        if counter == 1:
-            vfd_data_queue.put(['set_freq',1500])
+        # if counter == 1:
+        #     vfd_data_queue.put(['set_freq',1500])
 
-        if "Zeros ready" in data:
-            # --- RUN forward ---
-            vfd_data_queue.put(['start'])
+        # if "Zeros ready" in data:
+        #     # --- RUN forward ---
+        #     vfd_data_queue.put(['start'])
 
-        if counter >= 30:
-            vfd_data_queue.put(['stop'])
+        # if counter >= 30:
+        #     vfd_data_queue.put(['stop'])
 
     root.after(20, update_gui)
 
