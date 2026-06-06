@@ -10,7 +10,7 @@ import time
 
 client = ModbusSerialClient( 
     port='COM8',  # Revisar puerto
-    baudrate=4800,
+    baudrate=115200,
     parity='N',
     stopbits=1,
     bytesize=8,
@@ -24,7 +24,7 @@ SLAVE = 1
 # --- Set frequency (30 Hz) ---
 freq = 1500
 time.sleep(1)
-client.write_register(0x0002, 1500, device_id=SLAVE)
+client.write_register(0x0002, 1600, device_id=SLAVE)
 print('Frequency set')
 
 

@@ -24,26 +24,6 @@ baudrate = 115200
 
 winsound.Beep(350,500)
 
-# VFD Control Configuration
-client = ModbusSerialClient( 
-    port='COM8',  # Revisar puerto: COM4 para Andrés, COM8 Gabriel
-    baudrate=9600,
-    parity='N',
-    stopbits=1,
-    bytesize=8,
-    timeout=0.1
-)
-
-
-client.connect()
-SLAVE = 1
-
-
-# --- Set frequency (18 Hz) ---
-freq = 1500
-time.sleep(1)
-client.write_register(0x0002, 1800, device_id=SLAVE, no_response_expected=True)
-print('Frequency set')
 
 # Connect to serial ard_port
 try:
@@ -362,53 +342,61 @@ def Stats(var):
 
     return avg, stdev
 
-def read_error_register(client):
-    ERROR_BITS = {
-     0: "CRC Error",
-     1: "Data Length Error",
-     3: "Parity Error",
-     4: "Overrun Error",
-     5: "Framing Error",
-     6: "Timeout",
-    }
-    
-    result = client.read_holding_registers(
-     address=0x003D,
-     count=1,
-     device_id=SLAVE
-    )
-
-    if result.isError():
-        print("Modbus error:", result)
-        return
-
-    value = result.registers[0]
-    print(f"\nRaw register value: {value} (0x{value:04X})")
-
-    print("Detected errors:")
-    error_found = False
-
-    for bit, description in ERROR_BITS.items():
-        if value & (1 << bit):
-            print(f"- Bit {bit}: {description}")
-            error_found = True
-
-    if not error_found:
-        print("No errors detected")
-
 
 # Arduino polling function
 
 ard_data_queue = queue.Queue()
+VFD_data_queue = queue.Queue()
 
-def read_serial_data():
+def Serial_coms_thread():
+    print('Starting modbus client coms')
+    client = ModbusSerialClient(
+        port='COM8',  # Revisar puerto
+        baudrate=115200,
+        parity='N',
+        stopbits=1,
+        bytesize=8,
+        timeout=0.02
+    )
+    if client.connect():
+        print("Modbus client connected")
+    else:
+        print("Failed to connect Modbus client")
+        return  # or raise an exception
+
+    SLAVE = 1
+
     while True:
-        line = ser.readline().decode('utf-8').strip()
-        # print('Data received: ', line)
-        ard_data_queue.put(line)
+        if ser.in_waiting > 0:
+            data = ser.readline().decode('utf-8').strip()
+            ard_data_queue.put(data)
+            # print("Data: ", data)
+            # time.sleep(0.02)
+
+        if not VFD_data_queue.empty():
+            cmd = VFD_data_queue.get()
+            if cmd[0] == 'set_freq':
+                freq = cmd[1]
+                client.write_register(0x0002, freq, device_id=SLAVE)
+                print('Frequency set')
+
+            elif cmd[0] == 'start':
+                client.write_register(0x0001, 1, device_id=SLAVE)
+                print('Start drive')
+
+            elif cmd[0] == 'stop':
+                client.write_register(0x0001, 0, device_id=SLAVE)
+                print('Stop drive')
+
+            else:
+                print('Codigo de VFD no soportado')
+
+        else:
+            time.sleep(0.01)
+
 
 # Start thread
-threading.Thread(target=read_serial_data, daemon=True).start()
+threading.Thread(target=Serial_coms_thread, daemon=True).start()
 
 csv_file = open(csv_filename, mode='w', newline='')
 writer = csv.writer(csv_file)
@@ -659,9 +647,7 @@ def Update_graphs():
 
                 # --- START MOTOR ---
                 elif data[0] == "Zeros ready":
-                    client.write_register(0x0001, 1, device_id=SLAVE)
-                    print('Start drive')
-                    client.close()
+                    VFD_data_queue.put(['start'])
                     
                 # Store zero levelings
                 elif line.find('Zero levels') != -1:
@@ -693,7 +679,8 @@ def Update_graphs():
     
 
 
-
+# Set motor frequency to 1500 hz
+VFD_data_queue.put(['set_freq',2000])
 
 # RUN THE GUI
 window.after(10, Update_graphs)
@@ -702,9 +689,7 @@ window.mainloop()
 ser.close()
 
 # STOP MOTOR
-client.connect()
-client.write_register(0x0001, 0, device_id=SLAVE)
-print('Stop drive')
+VFD_data_queue.put(['stop'])
 
 # Correct for wrong number of crests - ALWAYS MAKE CORR POSITIVE
 if input('\nWas the wavelength correct? (y/n): ') == 'n':
