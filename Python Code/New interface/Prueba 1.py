@@ -24,7 +24,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QTimer
 
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -740,7 +739,6 @@ class MainWindow(QMainWindow):
         
 
         self.t += 1
-
 
 app = QApplication(sys.argv)
 
