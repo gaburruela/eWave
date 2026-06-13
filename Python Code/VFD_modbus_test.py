@@ -8,14 +8,14 @@ import time
 
 # o1-03 gives units, set at 0 for 0.01 Hz
 
-client = ModbusSerialClient( 
-    port='COM8',  # Revisar puerto
-    baudrate=2400,
-    parity='N',
-    stopbits=1,
-    bytesize=8,
-    timeout=1
-)
+client = ModbusSerialClient(
+        port='COM8',  # Revisar puerto
+        baudrate=115200,
+        parity='N',
+        stopbits=1,
+        bytesize=8,
+        timeout=0.02
+    )
 
 
 client.connect()
@@ -35,12 +35,12 @@ client.write_register(0x0001, 1, device_id=SLAVE)
 print('Start drive')
 
 
-time.sleep(10)
+time.sleep(1)
 
-client.write_register(0x0002, 2000, device_id=SLAVE)
-print('Frequency change')
+# client.write_register(0x0002, 2000, device_id=SLAVE)
+# print('Frequency change')
 
-time.sleep(10)
+# time.sleep(10)
 
 # --- STOP ---
 client.write_register(0x0001, 0, device_id=SLAVE)
