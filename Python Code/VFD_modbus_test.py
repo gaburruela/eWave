@@ -17,9 +17,9 @@ client = ModbusSerialClient(
         timeout=0.02
     )
 
-
+print("Before")
 client.connect()
-
+print("After")
 SLAVE = 1
 
 # --- Set frequency (30 Hz) ---
