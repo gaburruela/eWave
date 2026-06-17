@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
 
         # Fuentes
         font_id_poppins = QFontDatabase.addApplicationFont(
-            "Fonts/Poppins/Poppins-Bold.ttf"
+            r"C:\eWave\eWave\Python Code\New interface\Fonts\Poppins\Poppins-Bold.ttf"
         )
 
         font_id_inter = QFontDatabase.addApplicationFont(
@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
         # Fondo
         self.background = QLabel(self)
 
-        self.pixmap_original = QPixmap("Graphic Components/Background.jpg")
+        self.pixmap_original = QPixmap(r"C:\eWave\eWave\Python Code\New interface\Graphic Components\Background.jpg")
 
         self.background.setPixmap(
             self.pixmap_original.scaled(
@@ -78,7 +78,7 @@ class MainWindow(QMainWindow):
         self.background.lower()  # envía el fondo detrás de todo
 
         # Patrón SVG inferior
-        self.svg_renderer = QSvgRenderer("Graphic Components/Patrón 2.svg")
+        self.svg_renderer = QSvgRenderer(r"C:\eWave\eWave\Python Code\New interface\Graphic Components/Patron 2.svg")
 
         self.tile_w = 200
         self.tile_h = 100
