@@ -99,7 +99,7 @@ class Sensor:
 
 # SERIAL COMMUNICATION
 
-ARDPORT = 'COM6'  # COM3 para Andrés / COM4 para Daniel / COM6 para Gabriel
+ARDPORT = 'COM3'  # COM3 para Andrés / COM4 para Daniel / COM6 para Gabriel
 ARDBAUDRATE = 115200
 
 winsound.Beep(350,500)
@@ -128,8 +128,8 @@ if input('Are you sure? (y/n): ') == 'n':
 print('\nReady to start measurements!')
 
 # csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
-#csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
-csv_path = r'C:\Users\Gabu\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Gabriel
+csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
+# csv_path = r'C:\Users\Gabu\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Gabriel
 
 csv_filename = csv_path + motor_freq + ' Hz - ' + crank_pos + ' mm.csv'
 
@@ -379,7 +379,7 @@ VFD_data_queue = queue.Queue()
 def Serial_coms_thread():
     print('Starting modbus client coms')
     client = ModbusSerialClient(
-        port='COM8',  # Revisar puerto
+        port='COM4',  # Revisar puerto
         baudrate=115200,
         parity='N',
         stopbits=1,
@@ -400,7 +400,7 @@ def Serial_coms_thread():
 
     # Connect to Arduino
     # Have to check how to put inputs outside of the function
-    ard_port = 'COM6'  # COM3 para Andrés / COM4 para Daniel / COM6 para Gabriel
+    ard_port = 'COM3'  # COM3 para Andrés / COM4 para Daniel / COM6 para Gabriel
     baudrate = 115200
 
     # Connect to serial ard_port
