@@ -157,6 +157,7 @@ bool humidity_measured = false;
 
 int start_process = 0;
 bool bandera_inicio = false;
+bool bandera_crestas = false;
 
 // EXTERNAL FUNCTIONS
 // Manual mapping - get decimals - sensor is just which of the 2 sensors we're mapping
@@ -596,10 +597,6 @@ void setup() {
   pinMode(s2, INPUT);
   pinMode(sync, OUTPUT);
 
-
-  // BUTTON
-  pinMode(button_pin, INPUT);
-  pinMode(button_rst, INPUT);
 }
 
 void loop() {
@@ -609,7 +606,7 @@ void loop() {
   if (!bandera_inicio && Serial.available() > 0) {
     start_process = Serial.parseInt();
 
-    if (start_process == 1) {
+    if (start_process == "Start") {
       start_process = 0;
 
       bandera_inicio = true;
@@ -635,21 +632,31 @@ void loop() {
   }
 
   if (humidity_measured) {
-    //humidity_measured = false;
-    // UNIFORM INTERVALS
-    millis_current = millis();
-    
-    // Take new measurements only if inside the time interval
-    if (millis_current - millis_previous >= time_interval) {
-      
-      millis_previous = millis_current;
-      All_Measurements();
-
-      // Print results to csv - With filter for if ultrasonics turn off
-      if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
-        //Print_Results();
-        CSV_Results();
+    if (!bandera_crestas){
+      if (Serial.parseInt() == "Crests_ready"){
+        bandera_crestas = true;
+      }
+      else{
+        delay(200);
       }
     }
+    else{
+      //humidity_measured = false;
+      // UNIFORM INTERVALS
+      millis_current = millis();
+      
+      // Take new measurements only if inside the time interval
+      if (millis_current - millis_previous >= time_interval) {
+        
+        millis_previous = millis_current;
+        All_Measurements();
+
+        // Print results to csv - With filter for if ultrasonics turn off
+        if (s1_distance_calibrated - s1_zero_lvl < 300 && s2_distance_calibrated - s2_zero_lvl < 300) {
+          //Print_Results();
+          CSV_Results();
+        }
+      }
+    } 
   }
 }
