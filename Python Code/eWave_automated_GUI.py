@@ -740,6 +740,8 @@ class MainWindow(QMainWindow):
 
                 if self.experiment_wave_limit <= 0:
                     raise ValueError("Wave limit must be positive.")
+                
+                self.params_ready = True
 
             except ValueError as error:
                 print("Invalid experiment parameters:", error)
@@ -747,7 +749,7 @@ class MainWindow(QMainWindow):
                 self.start_button.setEnabled(False)
                 return
 
-            self.params_ready = True
+            
             self.start_requested = False
             self.start_button.setEnabled(True)
 
@@ -780,8 +782,33 @@ class MainWindow(QMainWindow):
             self.crests_input
         )
 
-        self.crests_between_sensors = int(self.crests_input.text())
-        self.crests_ready = True
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok |
+            QDialogButtonBox.Cancel
+        )
+
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+
+        layout.addWidget(buttons)
+
+        if dialog.exec():
+
+            try:
+                self.crests_between_sensors = int(self.crests_input.text())
+
+                if self.VFD_frequency <= 0:
+                    raise ValueError("Crests must be positive.")
+                
+                self.crests_ready = True
+
+            except ValueError as error:
+                print("Invalid experiment parameters:", error)
+                self.crests_ready = False
+                return
+
+        
+        
 
     def update_data(self):
 
