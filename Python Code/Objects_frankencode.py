@@ -51,6 +51,8 @@ class Sensor:
         self.wavelength_avg = 0  # Wavelength average from historic data
         self.wavelength_stdev = 0  # Wavelength standard deviation from historic data
 
+        self.crests = 0
+
 
     # Sensor methods
     def update_pp(self):
@@ -77,7 +79,7 @@ class Sensor:
         period = 1/wavelength_companion_sensor.freq[-1]
 
         # Add a full period per crest
-        percentage = time_diff/period + (crests - 1)
+        percentage = time_diff/period + (self.crests - 1)
 
         # Make sure phase is in sync - if not take away half a period
         if wavelength_companion_sensor.sign_cross * self.sign_cross < 0:
@@ -103,7 +105,7 @@ class Comms:
         self.client = None
 
         self.ard_baudrate = 115200
-        self.VFD_baudrate = 115200
+        self.VFD_baudrate = 19200
 
     def set_ports(self, ard_port, VFD_port):
         self.ard_port = ard_port
@@ -112,12 +114,13 @@ class Comms:
     def connect(self):
         self.client = ModbusSerialClient(
             port=self.VFD_port,
-            baudrate=self.VFD_baudrate,
+            baudrate=19200,
             parity="N",
             stopbits=1,
             bytesize=8,
             timeout=1
         )
+
 
         if not self.client.connect():
             raise RuntimeError(f"Failed to connect VFD on {self.VFD_port}")
@@ -127,8 +130,8 @@ class Comms:
 
         self.ser = serial.Serial(
             self.ard_port,
-            self.ard_baudrate,
-            timeout=1
+            115200,
+            timeout=0.02
         )
 
         self.ser.reset_input_buffer()
@@ -136,35 +139,17 @@ class Comms:
 
         time.sleep(2)
 
-# Comment out when using simulated data
-# Connect to serial port
-# try:
-#     ser = serial.Serial(port, baudrate)
-#     print(f"Conectado al puerto {port} a {baudrate} baudios.")
-# except serial.SerialException as e:
-#     print(f"No se pudo abrir el puerto {port}: {e}")
-#     exit()
-
-# Data queues for threaded serial coms
-ard_data_queue = queue.Queue()
-vfd_data_queue = queue.Queue()
-
 
 # csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
 #csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
 csv_path = r'C:\Users\Gabu\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Gabriel
 
-# Waits a couple of seconds to establish a conection with the arduino
-time.sleep(2)
-
 # GENERAL VARIABLES
-
-# Wave variables
-graph_max = 20 # Data points, not waves, gets calculated automatically on first period of wave
-points_per_period_flag = True
 
 # Graph variables
 time_csv = []
+time_start = 0
+
 # Useless variables
 AmbTemp_value = 0
 WaterTemp_value = 0
@@ -180,14 +165,10 @@ AngularVelocity_value = 0
 time_start_flag = True
 
 # Wavelength thingies
-# sensor_dist = 2.22
 crest_flag = True
-crests = 0  # Check wether can be an input of GUI
 
 # Rolling averages
 rolling_window = 5 # number of points to average
-# noBond_rolling_array = [] # store first 5 measurements
-# Bond_rolling_array = []
 
 # Others
 anti_ripple = 7 # crests to ignore
@@ -204,8 +185,6 @@ state = 'IDLE'
 
 def Serial_coms_thread():
 
-    global serial_comms
-
     print('Clearing serial buffers')
     serial_comms.ser.reset_input_buffer()
     serial_comms.ser.reset_output_buffer()
@@ -214,32 +193,35 @@ def Serial_coms_thread():
 
     # Start automatic arduino meassurements process
     data = "Start\r\n"
-    serial_comms.serial_comms.ser.write(data.encode())
+    serial_comms.ser.write(data.encode())
 
     while True:
         if serial_comms.ser.in_waiting > 0:
             data = serial_comms.ser.readline().decode('utf-8').strip()
             ard_data_queue.put(data)
-            # print("Data: ", data)
+            print("Data: ", data)
             # time.sleep(0.02)
 
         if not VFD_data_queue.empty():
             cmd = VFD_data_queue.get()
+            print('Command: ', cmd)
             if cmd[0] == 'set_freq':
-                freq = cmd[1] * 100
-                serial_comms.client.write_register(0x0002, freq, device_id=SLAVE)
+                freq = int(cmd[1] * 100)
+                serial_comms.client.write_register(0x0002, freq, device_id=1, no_response_expected=True)
                 print('Frequency set')
 
             elif cmd[0] == 'start':
-                serial_comms.client.write_register(0x0001, 1, device_id=SLAVE)
+                serial_comms.client.write_register(0x0001, 1, device_id=1, no_response_expected=True)
                 print('Start drive')
 
             elif cmd[0] == 'stop':
-                serial_comms.client.write_register(0x0001, 0, device_id=SLAVE)
+                serial_comms.client.write_register(0x0001, 0, device_id=1, no_response_expected=True)
                 print('Stop drive')
 
             else:
                 print('Codigo de VFD no soportado')
+
+            time.sleep(2)
 
         else:
             time.sleep(0.01)
@@ -254,17 +236,13 @@ def Data_and_window_processing():
     global time_start_flag
     global time_diff
     global crest_flag
-    global crests
-    global graph_update
-    global graph_max
-    global points_per_period_flag
     global writer
-    global max_waves
+    global state
 
     
 
     try:
-        if Bond.wave_counter < max_waves and not ard_data_queue.empty():
+        if Bond.wave_counter < GUI.experiment_wave_limit and not ard_data_queue.empty():
 
             # Get data from ard thread queue
             line = ard_data_queue.get()
@@ -388,15 +366,6 @@ def Data_and_window_processing():
 
                                         Bond.wavelength_avg, Bond.wavelength_stdev  = Bond.compute_stats(Bond.wavelength)
 
-                                    # Graph points
-
-                                    if points_per_period_flag:
-
-                                        graph_max = int(
-                                            1.4 * len(noBond.measurements)
-                                        )
-
-                                        points_per_period_flag = False
 
                                 noBond.wave_counter += 0.5
 
@@ -459,7 +428,6 @@ def Data_and_window_processing():
 
                                 Bond.wave_counter += 0.5
 
-                                graph_update = True
 
                             Bond.half_period = []
 
@@ -506,13 +474,7 @@ def Data_and_window_processing():
                         wave_count=Bond.wave_counter
                     )
 
-                    # if graph_update:
-                        
-                    #     graph_update = False
-
-                    #     if len(time_csv) >= graph_max:
-                    #         # ================
-                    #         print()
+                    
 
             # elif line.find('Zero levels') != -1:
             elif data[0] == "Zero levels":
@@ -526,45 +488,25 @@ def Data_and_window_processing():
 
                 winsound.Beep(350, 500)
 
-            # --- START MOTOR ---
-            # elif line.find("Zeros ready") != -1:
-            elif data[0] == "Zeros ready":
-                VFD_data_queue.put(['start'])
-                print('Starting motor, received zeros ready')
-
-            elif line.find('Ambient humidity') != -1:
-
-                if crest_flag:
-
-                    crests = int(
-                        input('\nCrests between sensors: ')
-                    )
-
-                    crest_flag = False
-
-                else:
-
-                    winsound.Beep(350, 500)
-
-                    print(line)
-
             else: # Put coms error code here for unexpected line
                 print(line)
 
-            # Update GUI after running full logic sequence
-            GUI.after(1,Data_and_window_processing)  # Keep the GUI loop going
+            # # Update GUI after running full logic sequence
+            # GUI.after(1,Data_and_window_processing)  # Keep the GUI loop going
 
         # Stop motor if wave counter is over limit
         else:
             # print('Entering else condition')
-            if Bond.wave_counter >= max_waves:
+            if Bond.wave_counter >= GUI.experiment_wave_limit:
                 VFD_data_queue.put(['stop'])
                 print('Stopping motor')
 
-                GUI.quit()
+                state = 'IDLE'
+
+                # GUI.quit()
                 return
-            else: # Still missing waves but queue is empty
-                GUI.after(10,Data_and_window_processing)  # Keep the GUI loop going
+            # else: # Still missing waves but queue is empty
+            #     GUI.after(10,Data_and_window_processing)  # Keep the GUI loop going
             
 
     except KeyboardInterrupt:
@@ -591,11 +533,11 @@ def Wait_for_start():
     # Transfer GUI values into control-side variables
     motor_freq = GUI.VFD_frequency
     crank_pos = GUI.crank_length
-    max_waves = GUI.wave_limit
-    # ard_COM_port = GUI.ard_port
-    ard_COM_port = "COM6"
-    # VFD_COM_port = GUI.VFD_port
-    VFD_COM_port = "COM8"
+    max_waves = GUI.experiment_wave_limit
+    ard_COM_port = GUI.ARD_port
+    # ard_COM_port = "COM6"
+    VFD_COM_port = GUI.VFD_port
+    # VFD_COM_port = "COM8"
 
     print("Experiment starting with:")
     print("Motor frequency:", motor_freq)
@@ -626,19 +568,26 @@ def Wait_for_start():
         "Bond_height 2 (mm)"
     ])
 
-    # Send selected frequency to VFD
-    VFD_data_queue.put(["set_freq", int(motor_freq)])
-
     # Start serial coms
     serial_comms.set_ports(ard_COM_port,VFD_COM_port)
-    serial_comms.connect()
+    try:
+        serial_comms.connect()
+    except Exception as error:
+        print("Error connecting serial devices:", error)
+        GUI.start_requested = False
+        GUI.start_button.setEnabled(True)
+        state = "IDLE"
+        return
 
     # Start the serial reading thread
 
     threading.Thread(target=Serial_coms_thread, daemon=True).start()
 
+    # Send selected frequency to VFD
+    VFD_data_queue.put(["set_freq", int(motor_freq)])
+
     # Now leave idle mode and enter the control/data-processing stage
-    GUI.show_status("Starting preliminary readings.")
+    # GUI.show_status("Starting preliminary readings.")
     state = "PRELIMINARY"
 
 
@@ -654,24 +603,29 @@ def preliminary_state():
     if data[0] == "Zero levels":
         # Do nothing because we dont have anything used for zero levels
         print(line)
-        GUI.show_status("Zero levels received.")
+        # GUI.show_status("Zero levels received.")
 
     elif data[0] == "Zeros ready":
-        GUI.show_status("Zeros ready. Starting motors.")
+        # GUI.show_status("Zeros ready. Starting motors.")
         VFD_data_queue.put(['start'])
+
+        time.sleep(3)
+        GUI.open_crests_dialog() # Calls for GUI to display crests input
+
         state = "WAITING_FOR_CRESTS"
 
-    elif data[0] == "Zeros ready":
-        GUI.show_status("Zeros ready. Starting motors.")
-        VFD_data_queue.put(['start'])
-        state = "WAITING_FOR_CRESTS"
+    # elif data[0] == "Zeros ready":
+    #     GUI.show_status("Zeros ready. Starting motors.")
+    #     VFD_data_queue.put(['start'])
+    #     state = "WAITING_FOR_CRESTS"
     
     else:
-        GUI.show_alarm(f"Unexpected serial command: {line}")
+        # GUI.show_alarm(f"Unexpected serial command: {line}")
         state = "ERROR"
     
 
 def wait_for_crests():
+
     global state
 
     if not GUI.crests_ready:
@@ -679,7 +633,10 @@ def wait_for_crests():
     
     # Start automatic arduino meassurements process
     data = "Crests_ready\r\n"
-    serial_comms.serial_comms.ser.write(data.encode())
+    serial_comms.ser.write(data.encode())
+
+    Bond.crests = GUI.crests_between_sensors
+    noBond.crests = GUI.crests_between_sensors
 
     state = "READING_WAVES"
     
@@ -743,7 +700,7 @@ GUI_app.exec()
 if (input('\nSave data? (y/n): ') == 'y'):
     results_file = open(csv_path + 'Results.csv', mode='a')
     # Name of the test
-    results_file.write('\n' + motor_freq + ',' + crank_pos + ',')
+    results_file.write('\n' + GUI.VFD_frequency + ',' + GUI.crank_length + ',')
     # Add the results
     results_file.write(str(noBond.pp_avg) + ',' + str(noBond.pp_stdev) + ',')
     results_file.write(str(Bond.pp_avg) + ',' + str(Bond.pp_stdev) + ',')

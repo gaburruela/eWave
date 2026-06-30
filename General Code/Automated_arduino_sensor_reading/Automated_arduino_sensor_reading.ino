@@ -141,7 +141,7 @@ bool zero_leveled = false;
 bool water_moving = false;
 
 // Timeouts
-const int timeout_lim = 6000; // Timeout for Inductive and zero leveling
+const int timeout_lim = 15000; // Timeout for Inductive and zero leveling
 
 // Inductive measurements
 int first_measurements_inductive = 0;
@@ -604,9 +604,10 @@ void loop() {
 
   // Wait for serial command "1" to arrive and start the process
   if (!bandera_inicio && Serial.available() > 0) {
-    start_process = Serial.parseInt();
+    String command = Serial.readStringUntil('\n');
+    command.trim();
 
-    if (start_process == "Start") {
+    if (command == "Start") {
       start_process = 0;
 
       bandera_inicio = true;
@@ -633,8 +634,11 @@ void loop() {
 
   if (humidity_measured) {
     if (!bandera_crestas){
-      if (Serial.parseInt() == "Crests_ready"){
-        bandera_crestas = true;
+      String command = Serial.readStringUntil('\n');
+      command.trim();
+
+      if (command == "Crests_ready") {
+          bandera_crestas = true;
       }
       else{
         delay(200);
