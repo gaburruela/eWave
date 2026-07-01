@@ -260,7 +260,12 @@ class MainWindow(QMainWindow):
         self.crests_between_sensors = None
 
         # Banderas para control de flujo en codigo de control
-        self.params_ready = False
+        self.experiment_params_ready = False
+        self.ard_port_ready = False
+        self.vfd_port_ready = False
+        self.coms_params_ready = False
+        self.results_folder_ready = False
+
         self.start_requested = False
         self.stop_requested = False
         self.crests_ready = False
@@ -751,11 +756,11 @@ class MainWindow(QMainWindow):
                 if self.experiment_wave_limit <= 0:
                     raise ValueError("Wave limit must be positive.")
                 
-                self.params_ready = True
+                self.experiment_params_ready = True
 
             except ValueError as error:
                 print("Invalid experiment parameters:", error)
-                self.params_ready = False
+                self.experiment_params_ready = False
                 self.start_button.setEnabled(False)
                 return
 
@@ -764,7 +769,11 @@ class MainWindow(QMainWindow):
             self.start_button.setEnabled(True)
 
     def start_clicked(self):
-        if not self.params_ready:
+        if (not self.experiment_params_ready 
+            or not self.ard_port_ready
+            or not self.vfd_port_ready
+            or not self.results_folder_ready):
+
             print("Cannot start: experiment parameters are missing.")
             return
 
@@ -1066,6 +1075,8 @@ class MainWindow(QMainWindow):
 
         print(f"Puerto Arduino seleccionado: {self.ARD_port}")
 
+        self.ard_port_ready = True
+
         self.update_com_menu_title()
         self.arduino_port_selected.emit(self.ARD_port)
 
@@ -1078,6 +1089,8 @@ class MainWindow(QMainWindow):
         )
 
         print(f"Puerto variador seleccionado: {self.VFD_port}")
+
+        self.vfd_port_ready = True
 
         self.update_com_menu_title()
         self.vfd_port_selected.emit(self.VFD_port)
