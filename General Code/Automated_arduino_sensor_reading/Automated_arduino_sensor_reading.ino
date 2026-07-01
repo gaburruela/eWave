@@ -139,7 +139,7 @@ float s2_zero_measurements_avg = 0;
 float s2_stdv = 4;
 bool zero_leveled = false;
 bool water_moving = false;
-float water_lvl_allowed_std = 0.1;
+float water_lvl_allowed_std = 0.4;
 
 // Timeouts
 const int timeout_lim = 15000; // Timeout for Inductive and zero leveling

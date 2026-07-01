@@ -277,7 +277,7 @@ def Serial_coms_thread(stop_event):
                 ).strip()
 
                 ard_data_queue.put(data)
-                print("Data: ", data)
+                # print("Data: ", data)
 
             if not VFD_data_queue.empty():
                 cmd = VFD_data_queue.get()
@@ -815,9 +815,9 @@ def preliminary_state():
         GUI.set_backend_status('Ceros listos')
 
 
-    elif data[0] == "Ambient humidity: ":
+    elif data[0] == "Average angular velocity: ":
 
-        GUI.set_backend_status('Midiendo condiciones ambientales')
+        GUI.set_backend_status('Midiendo RPM y condiciones ambientales')
 
 
     elif data[0] == "Ambient temperature: ":
