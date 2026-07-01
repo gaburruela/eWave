@@ -555,7 +555,7 @@ void CSV_Results() {
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("There's communication!");
+  // Serial.println("There's communication!");
 
   // ACCELEROMETER
 	// Try to initialize

@@ -76,6 +76,7 @@ class Sensor:
         if current_time - self.prev_time != 0:
             self.freq.append(1 / (current_time - self.prev_time))
 
+    
     def update_wavelength(self, wavelength_companion_sensor):
         period = 1/wavelength_companion_sensor.freq[-1]
 
@@ -97,6 +98,40 @@ class Sensor:
 
         return avg, stdev
 
+
+    def reset_params(self):
+        self.measurements = []  # Historic height meassurements
+        self.rolling_array = []  # Temporary array for calculating rolling avg of height
+                                 # the rolling avg is used as current height value
+
+        self.first_wave = True  # Flag to ignore first wave
+        self.anti_ripple = 0
+
+        self.half_period = []  # Stores height data of half a period
+        self.wave_counter = 0  # # of waves detected in this sensor
+
+        self.max_height = 0
+        self.min_height = 0
+
+        self.prev_time = 0  # Holds time of last cero crossing
+        self.sign_cross = 0  # Zero crossing sign positive or negative
+
+        self.pp = []  # Historic pp calculations
+        self.freq = [] # Historic freq calculations
+
+        self.pp_avg = 0  # Peak to peak average from historic data
+        self.pp_stdev = 0  # Peak to peak standard deviation from historic data
+
+        self.freq_avg = 0  # Frequency average from historic data
+        self.freq_stdev = 0  # Frequency standard deviation from historic data
+
+        self.wavelength = [] # Historic wavelength calculations
+        self.time_diff = 0 # Time difference for wavelength calculation
+        self.wavelength_avg = 0  # Wavelength average from historic data
+        self.wavelength_stdev = 0  # Wavelength standard deviation from historic data
+
+        self.crests = 0
+
 class Comms:
     def __init__(self):
         self.ard_port = None
@@ -113,52 +148,69 @@ class Comms:
         self.VFD_port = VFD_port
 
     def connect(self):
+        # Connect VFD
         self.client = ModbusSerialClient(
             port=self.VFD_port,
-            baudrate=19200,
+            baudrate=self.VFD_baudrate,
             parity="N",
             stopbits=1,
             bytesize=8,
             timeout=1
         )
 
-
         if not self.client.connect():
             raise RuntimeError(f"Failed to connect VFD on {self.VFD_port}")
 
-        self.client.socket.reset_input_buffer()
-        self.client.socket.reset_output_buffer()
-
+        # Connect Arduino
         self.ser = serial.Serial(
             self.ard_port,
-            115200,
+            self.ard_baudrate,
             timeout=0.02
         )
 
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
+        if not self.ser.is_open:
+            raise RuntimeError(f"Failed to connect Arduino on {self.ard_port}")
 
         time.sleep(2)
 
+        self.clear_buffers()
 
-# csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
-#csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
-#csv_path = r'C:\Users\Gabu\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Gabriel
-csv_path = r'C:\Users\Lourdes\Downloads\Andres\eWave\Datasets\II Semester 2025\Raw_Data\\'
+    def clear_buffers(self):
+        # Clear Arduino buffers
+        if self.ser is not None and self.ser.is_open:
+            self.ser.reset_input_buffer()
+            self.ser.reset_output_buffer()
+
+        # Clear VFD Modbus buffers
+        if self.client is not None and self.client.connected:
+            if self.client.socket is not None:
+                self.client.socket.reset_input_buffer()
+                self.client.socket.reset_output_buffer()
+
+    def disconnect(self):
+        # Close Arduino serial
+        if self.ser is not None:
+            if self.ser.is_open:
+                self.ser.close()
+            self.ser = None
+
+        # Close VFD Modbus connection
+        if self.client is not None:
+            self.client.close()
+            self.client = None
+
+    def restart(self):
+        self.disconnect()
+        time.sleep(0.5)
+        self.connect()
+        self.clear_buffers()
+
 
 # GENERAL VARIABLES
 
 # Graph variables
 time_csv = []
 time_start = 0
-
-# Useless variables
-AmbTemp_value = 0
-WaterTemp_value = 0
-Humidity_value = 0
-MotorTemp_value = 0
-AngularVelocity_value = 0
-
 
 
 # # Variables for getting wave parameters
@@ -181,53 +233,113 @@ anti_ripple = 7 # crests to ignore
 ard_data_queue = queue.Queue()
 VFD_data_queue = queue.Queue()
 
+serial_thread = None
+stop_serial_thread = threading.Event()
+
 # State machine control
 state = 'IDLE'
 
 
-def Serial_coms_thread():
+def Serial_coms_thread(stop_event):
+    try:
+        print('Clearing serial buffers')
 
-    print('Clearing serial buffers')
-    serial_comms.ser.reset_input_buffer()
-    serial_comms.ser.reset_output_buffer()
+        if serial_comms.ser is None or not serial_comms.ser.is_open:
+            print("Arduino serial port is not open")
+            return
 
-    time.sleep(2)  # Give 2 seconds to let arduino boot up
+        serial_comms.ser.reset_input_buffer()
+        serial_comms.ser.reset_output_buffer()
 
-    # Start automatic arduino meassurements process
-    data = "Start\r\n"
-    serial_comms.ser.write(data.encode())
+        # Wait for Arduino boot, but allow thread to stop cleanly
+        if stop_event.wait(2):
+            print("Serial thread stopped before Arduino start")
+            return
 
-    while True:
-        if serial_comms.ser.in_waiting > 0:
-            data = serial_comms.ser.readline().decode('utf-8').strip()
-            ard_data_queue.put(data)
-            print("Data: ", data)
-            # time.sleep(0.02)
+        if serial_comms.ser is None or not serial_comms.ser.is_open:
+            print("Arduino serial port closed before start command")
+            return
 
-        if not VFD_data_queue.empty():
-            cmd = VFD_data_queue.get()
-            print('Command: ', cmd)
-            if cmd[0] == 'set_freq':
-                freq = int(cmd[1] * 100)
-                serial_comms.client.write_register(0x0002, freq, device_id=1, no_response_expected=True)
-                print('Frequency set')
+        # Start automatic Arduino measurements process
+        data = "Start\r\n"
+        serial_comms.ser.write(data.encode())
 
-            elif cmd[0] == 'start':
-                serial_comms.client.write_register(0x0001, 1, device_id=1, no_response_expected=True)
-                print('Start drive')
+        while not stop_event.is_set():
 
-            elif cmd[0] == 'stop':
-                serial_comms.client.write_register(0x0001, 0, device_id=1, no_response_expected=True)
-                print('Stop drive')
+            if serial_comms.ser is None or not serial_comms.ser.is_open:
+                print("Arduino serial port closed")
+                break
+
+            if serial_comms.ser.in_waiting > 0:
+                data = serial_comms.ser.readline().decode(
+                    'utf-8',
+                    errors='ignore'
+                ).strip()
+
+                ard_data_queue.put(data)
+                print("Data: ", data)
+
+            if not VFD_data_queue.empty():
+                cmd = VFD_data_queue.get()
+                print('Command: ', cmd)
+
+                if serial_comms.client is None or not serial_comms.client.connected:
+                    print("VFD client is not connected")
+                    continue
+
+                if cmd[0] == 'set_freq':
+                    freq = int(cmd[1] * 100)
+                    serial_comms.client.write_register(
+                        0x0002,
+                        freq,
+                        device_id=1,
+                        no_response_expected=True
+                    )
+                    print('Frequency set')
+
+                elif cmd[0] == 'start':
+                    serial_comms.client.write_register(
+                        0x0001,
+                        1,
+                        device_id=1,
+                        no_response_expected=True
+                    )
+                    print('Start drive')
+
+                elif cmd[0] == 'stop':
+                    serial_comms.client.write_register(
+                        0x0001,
+                        0,
+                        device_id=1,
+                        no_response_expected=True
+                    )
+                    print('Stop drive')
+
+                else:
+                    print('Codigo de VFD no soportado')
+
+                # Wait, but allow thread stop during the wait
+                stop_event.wait(2)
 
             else:
-                print('Codigo de VFD no soportado')
+                stop_event.wait(0.01)
 
-            time.sleep(2)
+    except Exception as error:
+        if not stop_event.is_set():
+            print("Serial thread error:", error)
 
-        else:
-            time.sleep(0.01)
+    print("Serial thread stopped")
 
+def stop_serial_thread_safely():
+    global serial_thread
+    global stop_serial_thread
+
+    stop_serial_thread.set()
+
+    if serial_thread is not None and serial_thread.is_alive():
+        serial_thread.join(timeout=3)
+
+    serial_thread = None
 
 # WAVE LOGIC CONTROL FUNCTION
 
@@ -508,6 +620,7 @@ def Data_and_window_processing():
 
         print("Deteniendo la lectura de datos.")
 
+experiment_restart_requested = False
 
 def Wait_for_start():
 
@@ -515,6 +628,13 @@ def Wait_for_start():
     global csv_file
     global writer
     global state
+    global experiment_restart_requested
+    global ard_data_queue
+    global VFD_data_queue
+    global time_csv, time_start, time_start_flag, crest_flag
+    global serial_thread
+    global stop_serial_thread
+
 
     if GUI.stop_requested:
         state = "STOP"
@@ -532,11 +652,30 @@ def Wait_for_start():
     if not GUI.start_requested:
         return
 
+    if experiment_restart_requested:
+        stop_serial_thread_safely()
+        stop_serial_thread.clear()
+
+        Bond.reset_params()
+        noBond.reset_params()
+
+        ard_data_queue = queue.Queue()
+        VFD_data_queue = queue.Queue()
+
+        time_csv = []
+        time_start = 0
+        time_start_flag = True
+        crest_flag = True
+
+        GUI.crests_ready = False
+
 
     # Transfer GUI values into control-side variables
     motor_freq = GUI.VFD_frequency
     crank_pos = GUI.crank_length
     max_waves = GUI.experiment_wave_limit
+    Bond.sensor_dist = GUI.sensor_distance
+    noBond.sensor_dist = GUI.sensor_distance
 
     ard_COM_port = GUI.ARD_port
     VFD_COM_port = GUI.VFD_port
@@ -574,18 +713,42 @@ def Wait_for_start():
 
     # Start serial coms
     serial_comms.set_ports(ard_COM_port,VFD_COM_port)
-    try:
-        serial_comms.connect()
-    except Exception as error:
-        print("Error connecting serial devices:", error)
-        GUI.start_requested = False
-        GUI.start_button.setEnabled(True)
-        state = "IDLE"
-        return
+    
+    if not experiment_restart_requested:
+        try:
+            serial_comms.connect()
+        except Exception as error:
+            # print("Error connecting serial devices:", error)
+            GUI.set_backend_status(f'Fallo en puertos COM {error}')
+            GUI.start_requested = False
+            GUI.start_button.setEnabled(False)
+            state = "IDLE"
+            return
+
+    else:
+        try:
+            serial_comms.restart() 
+        except Exception as error:
+            # print("Error connecting serial devices:", error)
+            GUI.set_backend_status(f'Fallo en puertos COM {error}')
+            GUI.start_requested = False
+            GUI.start_button.setEnabled(False)
+            state = "IDLE"
+            return
 
     # Start the serial reading thread
 
-    threading.Thread(target=Serial_coms_thread, daemon=True).start()
+    stop_serial_thread.clear()
+
+    serial_thread = threading.Thread(
+        target=Serial_coms_thread,
+        args=(stop_serial_thread,),
+        daemon=True
+    )
+
+    serial_thread.start()
+
+    experiment_restart_requested = False
 
     # Send selected frequency to VFD
     VFD_data_queue.put(["set_freq", motor_freq])
@@ -611,18 +774,33 @@ def preliminary_state():
 
     if data[0] == "Zero levels":
         # Do nothing because we dont have anything used for zero levels
-        print(line)
+        # print(line)
+        GUI.set_backend_status(f'Niveles cero: {data[1]}, {data[2]}')
 
     elif data[0] == "Zeros ready":
         VFD_data_queue.put(['start'])
+        GUI.set_backend_status('Ceros listos')
+
+
+    elif data[0] == "Ambient humidity: ":
+
+        GUI.set_backend_status('Midiendo condiciones ambientales')
 
 
     elif data[0] == "Ambient temperature: ":
 
+        GUI.set_backend_status('')
         GUI.open_crests_dialog() # Calls for GUI to display crests input
 
         state = "WAITING_FOR_CRESTS"
+
         
+    elif data[0] == "ERROR":
+
+        GUI.set_backend_status(data[1])
+
+        state = "ERROR"
+
     
     # else:
     #     # GUI.show_alarm(f"Unexpected serial command: {line}")
@@ -656,12 +834,15 @@ def wait_for_crests():
     
 
 show_save_data_screen = True
+data_saved = False
 
 def finished_state():
 
     global state
     global show_save_data_screen
     global csv_file
+    global data_saved
+    global experiment_restart_requested
 
     if show_save_data_screen:
         GUI.ask_save_data()
@@ -669,34 +850,68 @@ def finished_state():
 
     if GUI.save_data:
         save_results()
-        show_save_data_screen = True
         GUI.save_data = False
         
         try:
             csv_file.close()
         except:
             pass
+        
+        data_saved = True
 
         return
 
-    if GUI.stop_requested:
+    if GUI.stop_requested or data_saved:
+    
+        try:
+            csv_file.close()
+        except:
+            pass
+
         state = "IDLE"
+        experiment_restart_requested = True
+        show_save_data_screen = True
+        data_saved = False
+
         GUI.start_requested = False
         GUI.experiment_params_ready = False
         GUI.stop_requested = False
         GUI.save_data = False
+        GUI.crests_ready = False
+
+        stop_serial_thread_safely()
+
         return
 
 
 def error_state():
     global state
+    global experiment_restart_requested
+    global csv_file
+    global saved_data
+    global show_save_data_screen
 
     if GUI.stop_requested:
+        VFD_data_queue.put(['stop'])
+
+        stop_serial_thread_safely()
+
+        try:
+            csv_file.close()
+        except:
+            pass
+
         state = "IDLE"
         GUI.start_requested = False
         GUI.experiment_params_ready = False
         GUI.stop_requested = False
         GUI.save_data = False
+        GUI.crests_ready = False
+
+        saved_data = False
+        show_save_data_screen = True
+        experiment_restart_requested = True
+
         return
 
 
@@ -760,7 +975,7 @@ def control_loop():
     global state
 
     if state == "IDLE":
-        GUI.set_backend_status('Esperando parametros')
+        GUI.set_backend_status('Configurando experimento')
         Wait_for_start()
 
     elif state == "PRELIMINARY":
