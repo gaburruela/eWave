@@ -2,6 +2,7 @@ import sys
 import numpy as np
 import os
 os.environ["PYQTGRAPH_QT_LIB"] = "PySide6"
+os.environ["QT_LOGGING_RULES"] = "qt.qpa.window=false"
 import pyqtgraph as pg
 from pathlib import Path
 from PySide6.QtWidgets import QLabel
@@ -45,6 +46,7 @@ class MainWindow(QMainWindow):
         self.crank_length = None
         self.wave_limit = None
         self.crests_between_sensors = None
+        self.sensor_distance = 2.22
 
         # Banderas para control de flujo en codigo de control
         self.experiment_params_ready = False
@@ -261,8 +263,9 @@ class MainWindow(QMainWindow):
             pen=pg.mkPen(color=white, width=4)
         )
 
-        # Extra sensor data
-
+        # ----------------------------
+        # ---- Datos experimentoS ----
+        # ----------------------------
         self.extra_data_panel = QWidget(self)
         self.extra_data_grid = QGridLayout()
         self.extra_data_panel.setLayout(self.extra_data_grid)   
@@ -503,7 +506,7 @@ class MainWindow(QMainWindow):
 
         bottom_layout.addWidget(self.data_container)
 
-        QTimer.singleShot(0, self.initialize_ui)
+        QTimer.singleShot(0, self.force_maximized_start)
 
     def initialize_ui(self):
         self.update_pattern_size()
@@ -529,6 +532,17 @@ class MainWindow(QMainWindow):
         self.draw_bottom_pattern()
 
         self.update_fonts()
+
+    def force_maximized_start(self):
+        screen = QApplication.primaryScreen()
+
+        if screen is not None:
+            self.setGeometry(screen.availableGeometry())
+
+        self.setWindowState(Qt.WindowMaximized)
+        self.showMaximized()
+
+        self.initialize_ui()
 
     def resizeEvent(self, event): # Reescala interfaz dependiendo de tamaño de ventana
 
@@ -726,6 +740,9 @@ class MainWindow(QMainWindow):
         self.freq_input = QLineEdit()
         self.crank_length_input = QLineEdit()
         self.wave_lim_input = QLineEdit()
+        self.sensor_distance_input = QLineEdit()
+
+        self.sensor_distance_input.setText("2.22")
 
         layout.addRow(
             "Frecuencia del variador [Hz]:",
@@ -740,6 +757,11 @@ class MainWindow(QMainWindow):
         layout.addRow(
             "Cantidad de olas:",
             self.wave_lim_input
+        )
+
+        layout.addRow(
+            "Distancia entre sensores [m]:",
+            self.sensor_distance_input
         )
 
         buttons = QDialogButtonBox(
@@ -759,11 +781,21 @@ class MainWindow(QMainWindow):
                 self.crank_length = float(self.crank_length_input.text())
                 self.experiment_wave_limit = int(float(self.wave_lim_input.text()))
 
+                sensor_distance_text = self.sensor_distance_input.text().strip()
+
+                if sensor_distance_text == "":
+                    self.sensor_distance = 2.22
+                else:
+                    self.sensor_distance = float(sensor_distance_text)
+
                 if self.VFD_frequency <= 0:
                     raise ValueError("Motor frequency must be positive.")
 
                 if self.experiment_wave_limit <= 0:
                     raise ValueError("Wave limit must be positive.")
+
+                if self.sensor_distance <= 0:
+                    raise ValueError("Sensor distance must be positive.")
                 
                 self.experiment_params_ready = True
 
@@ -1119,8 +1151,8 @@ class MainWindow(QMainWindow):
 
         self.current_state.setStyleSheet("""
             QLabel#backendStatusLabel {
-                background-color: rgba(100, 100, 100, 220);
-                color: white;
+                background-color:  rgba(255, 255, 255, 255);
+                color: black;
                 border-radius: 2.5px;
                 padding: 6px 14px;
                 margin: 2px;
@@ -1168,11 +1200,11 @@ class MainWindow(QMainWindow):
 
         return self.save_data
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     app = QApplication(sys.argv)
+    app = QApplication(sys.argv)
 
-#     window = MainWindow()
-#     window.showMaximized()
+    window = MainWindow()
+    window.showMaximized()
 
-#     app.exec()
+    app.exec()
