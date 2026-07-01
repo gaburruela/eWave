@@ -142,7 +142,8 @@ class Comms:
 
 # csv_path = r'C:\Users\Daniel Quesada\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Daniel
 #csv_path = r'C:\eWave\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Andrés
-csv_path = r'C:\Users\Gabu\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Gabriel
+#csv_path = r'C:\Users\Gabu\Documents\GitHub\eWave\Datasets\II Semester 2025\Raw_Data\\' # Para Gabriel
+csv_path = r'C:\Users\Lourdes\Downloads\Andres\eWave\Datasets\II Semester 2025\Raw_Data\\'
 
 # GENERAL VARIABLES
 

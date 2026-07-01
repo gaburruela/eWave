@@ -1,12 +1,14 @@
 import sys
 import numpy as np
-import pyqtgraph as pg
 import os
+os.environ["PYQTGRAPH_QT_LIB"] = "PySide6"
+import pyqtgraph as pg
 from pathlib import Path
 from PySide6.QtWidgets import QLabel
-from PySide6.QtGui import QPixmap, QFontDatabase, QFont, QPainter, QImage
-from PySide6.QtCore import Qt, QRectF
+from PySide6.QtGui import QPixmap, QFontDatabase, QFont, QPainter, QImage, QAction, QActionGroup
+from PySide6.QtCore import Qt, QRectF, Signal
 from PySide6.QtSvg import QSvgRenderer
+import serial.tools.list_ports
 
 from PySide6.QtWidgets import (
     QApplication,
@@ -30,10 +32,18 @@ from PySide6.QtCore import QTimer
 BASE_DIR = Path(__file__).resolve().parent
 
 class MainWindow(QMainWindow):
+    arduino_port_selected = Signal(str)
+    vfd_port_selected = Signal(str)
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("Monitoreo de Sensores")
+
+        self.com_port = None
+        self.ARD_port = None
+        self.VFD_port = None
+
+        self.create_com_port_menu()
 
         self.central = QWidget()
         self.setCentralWidget(self.central)
@@ -85,7 +95,7 @@ class MainWindow(QMainWindow):
         self.background.lower()  # envía el fondo detrás de todo
 
         # Patrón SVG inferior (logo eWave)
-        self.svg_renderer = QSvgRenderer(str(BASE_DIR / "Graphic Components" / "Patron 2.svg"))
+        self.svg_renderer = QSvgRenderer(str(BASE_DIR / "Graphic Components" / "Patrón 2.svg"))
 
         self.tile_w = 200
         self.tile_h = 100
@@ -753,7 +763,6 @@ class MainWindow(QMainWindow):
             self.start_requested = False
             self.start_button.setEnabled(True)
 
-
     def start_clicked(self):
         if not self.params_ready:
             print("Cannot start: experiment parameters are missing.")
@@ -806,9 +815,6 @@ class MainWindow(QMainWindow):
                 print("Invalid experiment parameters:", error)
                 self.crests_ready = False
                 return
-
-        
-        
 
     def update_data(self):
 
@@ -930,6 +936,160 @@ class MainWindow(QMainWindow):
         for label, value in zip(self.extra_data_labels, values):
             label.setText(value)
 
+    def create_com_port_menu(self):
+        self.menuBar().setStyleSheet("""
+            QMenuBar {
+                background-color: rgba(30, 30, 30, 220);
+                border-radius: 2.5px;
+                padding: 3px;
+                spacing: 3px;
+            }
+
+            QMenuBar::item {
+                background-color: rgba(100, 100, 100, 220);
+                color: white;
+                border-radius: 2.5px;
+                padding: 6px 14px;
+                margin: 2px;
+                font-weight: bold;
+            }
+
+            QMenuBar::item:selected {
+                background-color: rgba(100, 100, 100, 150);
+                color: white;
+            }
+
+            QMenu {
+                background-color: rgba(40, 40, 40, 245);
+                color: white;
+                border-radius: 2.5px;
+                padding: 3px;
+            }
+
+            QMenu::item {
+                padding: 7px 24px;
+                border-radius: 2.5px;
+            }
+
+            QMenu::item:selected {
+                background-color: #00A1A9;
+                color: white;
+            }
+
+            QMenu::item:checked {
+                background-color: #FCAF08;
+                color: black;
+                font-weight: bold;
+            }
+        """)
+
+        self.menu_comunicacion = self.menuBar().addMenu(
+            "Puertos de Comunicación"
+        )
+
+        self.menu_arduino_ports = self.menu_comunicacion.addMenu(
+            "Puerto Arduino"
+        )
+
+        self.menu_vfd_ports = self.menu_comunicacion.addMenu(
+            "Puerto Variador"
+        )
+
+        self.menu_comunicacion.addSeparator()
+
+        self.action_refresh_ports = QAction("Actualizar puertos", self)
+        self.action_refresh_ports.triggered.connect(self.refresh_com_ports)
+        self.menu_comunicacion.addAction(self.action_refresh_ports)
+
+        # Actualiza los puertos cada vez que se abre el menú
+        self.menu_comunicacion.aboutToShow.connect(self.refresh_com_ports)
+
+        self.refresh_com_ports()
+
+    def refresh_com_ports(self):
+        ports = list(serial.tools.list_ports.comports())
+
+        self.menu_arduino_ports.clear()
+        self.menu_vfd_ports.clear()
+
+        self.arduino_port_group = QActionGroup(self)
+        self.arduino_port_group.setExclusive(True)
+
+        self.vfd_port_group = QActionGroup(self)
+        self.vfd_port_group.setExclusive(True)
+
+        if not ports:
+            no_arduino_ports = QAction("No hay puertos disponibles", self)
+            no_arduino_ports.setEnabled(False)
+            self.menu_arduino_ports.addAction(no_arduino_ports)
+
+            no_vfd_ports = QAction("No hay puertos disponibles", self)
+            no_vfd_ports.setEnabled(False)
+            self.menu_vfd_ports.addAction(no_vfd_ports)
+
+            return
+
+        for port in ports:
+            port_name = port.device
+            port_text = f"{port.device} - {port.description}"
+
+            arduino_action = QAction(port_text, self)
+            arduino_action.setCheckable(True)
+            arduino_action.triggered.connect(
+                lambda checked=False, p=port_name: self.set_arduino_port(p)
+            )
+
+            self.arduino_port_group.addAction(arduino_action)
+            self.menu_arduino_ports.addAction(arduino_action)
+
+            if self.ARD_port == port_name:
+                arduino_action.setChecked(True)
+
+            vfd_action = QAction(port_text, self)
+            vfd_action.setCheckable(True)
+            vfd_action.triggered.connect(
+                lambda checked=False, p=port_name: self.set_vfd_port(p)
+            )
+
+            self.vfd_port_group.addAction(vfd_action)
+            self.menu_vfd_ports.addAction(vfd_action)
+
+            if self.VFD_port == port_name:
+                vfd_action.setChecked(True)
+                
+    def set_arduino_port(self, port_name):
+        self.ARD_port = port_name
+
+        self.statusBar().showMessage(
+            f"Puerto Arduino seleccionado: {self.ARD_port}"
+        )
+
+        print(f"Puerto Arduino seleccionado: {self.ARD_port}")
+
+        self.update_com_menu_title()
+        self.arduino_port_selected.emit(self.ARD_port)
+
+
+    def set_vfd_port(self, port_name):
+        self.VFD_port = port_name
+
+        self.statusBar().showMessage(
+            f"Puerto variador seleccionado: {self.VFD_port}"
+        )
+
+        print(f"Puerto variador seleccionado: {self.VFD_port}")
+
+        self.update_com_menu_title()
+        self.vfd_port_selected.emit(self.VFD_port)
+
+
+    def update_com_menu_title(self):
+        arduino_text = self.ARD_port if self.ARD_port is not None else "--"
+        vfd_text = self.VFD_port if self.VFD_port is not None else "--"
+
+        self.menu_comunicacion.setTitle(
+            f"Puertos | Arduino: {arduino_text} | Variador: {vfd_text}"
+        )
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)
