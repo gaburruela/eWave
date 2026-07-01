@@ -714,8 +714,6 @@ class MainWindow(QMainWindow):
 
         painter.end()
 
-    # =============================== Button click functions ===============================    
-
     def open_parameters_dialog(self):
 
         dialog = QDialog(self)
@@ -1159,8 +1157,6 @@ class MainWindow(QMainWindow):
 
         return self.save_data
 
-        
-    
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)
