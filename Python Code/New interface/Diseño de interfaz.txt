@@ -1,0 +1,13 @@
+1. Mostrar gráfica de las olas
+2. Mostrar datos de cada sensor y parámetros de la ola
+3. Selección de COM para Arduino y variador
+4. Botón de inicio
+5. Botón de paro
+6. Configuración de parámetros: frecuencia del variador, longitud del brazo, cantidad de olas
+7. Seleccionar que sensores mostrar
+8. Cantidad de crestas
+9. Ubicación para guardar los datos crudos
+10. Compatibilidad de múltiples pruebas sin reiniciar
+
+
+Se utilizará PySide6

@@ -9,17 +9,17 @@ import time
 # o1-03 gives units, set at 0 for 0.01 Hz
 
 client = ModbusSerialClient( 
-    port='COM8',  # Revisar puerto
-    baudrate=19200,
+    port='COM4',  # Revisar puerto
+    baudrate=2400,
     parity='N',
     stopbits=1,
     bytesize=8,
     timeout=1
 )
 
-
+print("Before")
 client.connect()
-
+print("After")
 SLAVE = 1
 
 # --- Set frequency (30 Hz) ---
