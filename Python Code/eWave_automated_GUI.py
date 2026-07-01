@@ -511,16 +511,30 @@ class MainWindow(QMainWindow):
     def initialize_ui(self):
         self.update_pattern_size()
 
-        self.main_layout.setContentsMargins(
-            40,
-            10,
-            40,
-            self.tile_h + 20
+        scale = min(
+            self.width() / 1400,
+            self.height() / 700
         )
 
-        self.data_container.setMaximumWidth(
-            int(self.width() * 0.7)
+        margin_x = max(10, int(40 * scale))
+        margin_top = max(4, int(10 * scale))
+        margin_bottom = self.tile_h + max(8, int(20 * scale))
+
+        self.main_layout.setContentsMargins(
+            margin_x,
+            margin_top,
+            margin_x,
+            margin_bottom
         )
+
+        if self.width() < 1200:
+            self.data_container.setMaximumWidth(
+                int(self.width() * 0.95)
+            )
+        else:
+            self.data_container.setMaximumWidth(
+                int(self.width() * 0.7)
+            )
 
         self.bottom_pattern.setGeometry(
             0,
@@ -530,8 +544,8 @@ class MainWindow(QMainWindow):
         )
 
         self.draw_bottom_pattern()
-
         self.update_fonts()
+        self.update_button_sizes()
 
     def force_maximized_start(self):
         screen = QApplication.primaryScreen()
@@ -544,14 +558,37 @@ class MainWindow(QMainWindow):
 
         self.initialize_ui()
 
+    def update_button_sizes(self):
+        scale = min(
+            self.width() / 1400,
+            self.height() / 700
+        )
+
+        button_w = max(110, int(180 * scale))
+        button_h_big = max(55, int(90 * scale))
+        button_h_small = max(40, int(45 * scale))
+
+        self.params_button.setMinimumSize(button_w, button_h_big)
+        self.start_button.setMinimumSize(button_w, button_h_small)
+        self.stop_button.setMinimumSize(button_w, button_h_big)
+
     def resizeEvent(self, event): # Reescala interfaz dependiendo de tamaño de ventana
 
         self.update_pattern_size()
+        scale = min(
+            self.width() / 1400,
+            self.height() / 700
+        )
+
+        margin_x = max(10, int(40 * scale))
+        margin_top = max(4, int(10 * scale))
+        margin_bottom = self.tile_h + max(8, int(20 * scale))
+
         self.main_layout.setContentsMargins(
-            40,
-            10,
-            40,
-            self.tile_h + 20
+            margin_x,
+            margin_top,
+            margin_x,
+            margin_bottom
         )
 
         self.background.setGeometry(self.rect())
@@ -564,9 +601,14 @@ class MainWindow(QMainWindow):
             )
         )
 
-        self.data_container.setMaximumWidth(
-            int(self.width() * 0.7)
-        )
+        if self.width() < 1200:
+            self.data_container.setMaximumWidth(
+                int(self.width() * 0.95)
+            )
+        else:
+            self.data_container.setMaximumWidth(
+                int(self.width() * 0.7)
+            )
 
         self.bottom_pattern.setGeometry(
             0,
@@ -577,7 +619,7 @@ class MainWindow(QMainWindow):
 
         self.draw_bottom_pattern()                          
         self.update_fonts()
-
+        self.update_button_sizes()
         super().resizeEvent(event)
 
     def update_fonts(self):
@@ -587,17 +629,17 @@ class MainWindow(QMainWindow):
             self.height() / 700
         )
 
-        title_size = max(18, int(35 * scale))
+        title_size = max(14, int(35 * scale))
 
-        data_title_size = max(16, int(25 * scale))
+        data_title_size = max(12, int(25 * scale))
 
-        main_data_label_size = max(15, int(15 * scale))
-        main_data_value_size = max(14, int(14 * scale))
+        main_data_label_size = max(9, int(15 * scale))
+        main_data_value_size = max(9, int(14 * scale))
 
-        secondary_data_label_size = max(8, int(12 * scale))
-        secondary_data_value_size = max(8, int(11 * scale))
+        secondary_data_label_size = max(7, int(12 * scale))
+        secondary_data_value_size = max(7, int(11 * scale))
 
-        graph_size = max(8, int(12 * scale))
+        graph_size = max(7, int(12 * scale))
 
         # Título principal
         font = QFont(self.family_poppins)
@@ -662,7 +704,7 @@ class MainWindow(QMainWindow):
 
         button_font = QFont(self.family_poppins)
         button_font.setBold(True)
-        button_font.setPointSize(max(10, int(18 * scale)))
+        button_font.setPointSize(max(8, int(18 * scale)))
 
         self.params_button.setFont(button_font)
         self.start_button.setFont(button_font)
