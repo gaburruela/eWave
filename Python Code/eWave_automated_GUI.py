@@ -1124,6 +1124,8 @@ class MainWindow(QMainWindow):
 
         self.results_folder = selected_folder
 
+        self.results_folder_ready = True
+
         self.menu_storage.setTitle(
             f"Almacenamiento | {self.results_folder}"
         )

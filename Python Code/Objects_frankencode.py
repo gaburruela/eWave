@@ -47,6 +47,7 @@ class Sensor:
         self.freq_stdev = 0  # Frequency standard deviation from historic data
 
         self.wavelength = [] # Historic wavelength calculations
+        self.time_diff = 0 # Time difference for wavelength calculation
         self.sensor_dist = 2.22  # Distance between sensors used for wavelength in meters
         self.wavelength_avg = 0  # Wavelength average from historic data
         self.wavelength_stdev = 0  # Wavelength standard deviation from historic data
@@ -79,7 +80,7 @@ class Sensor:
         period = 1/wavelength_companion_sensor.freq[-1]
 
         # Add a full period per crest
-        percentage = time_diff/period + (self.crests - 1)
+        percentage = wavelength_companion_sensor.time_diff/period + (self.crests - 1)
 
         # Make sure phase is in sync - if not take away half a period
         if wavelength_companion_sensor.sign_cross * self.sign_cross < 0:
@@ -240,7 +241,9 @@ def Data_and_window_processing():
     global writer
     global state
 
-    
+    if GUI.stop_requested:
+        state = "STOP"
+        return
 
     try:
         if Bond.wave_counter < GUI.experiment_wave_limit and not ard_data_queue.empty():
@@ -253,7 +256,7 @@ def Data_and_window_processing():
             # if line.find('Wave data') != -1:
             if data[0] == "Wave data":
 
-                writer.writerow(data)
+                writer.writerow(data[1:])
 
                 # Time setup
 
@@ -388,7 +391,7 @@ def Data_and_window_processing():
                             else:
                                 Bond.anti_ripple += 1
 
-                        if (Bond.measurements[-1] * Bond_height < 0
+                        if (Bond.half_period[-1] * Bond_height < 0
                             and Bond.anti_ripple == 0) or Bond_height == 0:
 
                             Bond.anti_ripple = 1
@@ -419,7 +422,9 @@ def Data_and_window_processing():
 
                                 else:
 
-                                    time_diff = ttime - noBond.prev_time
+                                    # Saves time diff for wavelength in both sensors since its shared
+                                    noBond.time_diff = ttime - noBond.prev_time
+                                    Bond.time_diff = ttime - noBond.prev_time
 
                                     Bond.sign_cross = Bond_height
 
@@ -475,25 +480,14 @@ def Data_and_window_processing():
                         wave_count=Bond.wave_counter
                     )
 
-                    
-
-            # elif line.find('Zero levels') != -1:
-            elif data[0] == "Zero levels":
-
-                data_zero = line.split(',')
-
-                noBond_zero_lvl = float(data_zero[1])
-                Bond_zero_lvl = float(data_zero[2])
-
-                print(line)
-
-                winsound.Beep(350, 500)
 
             else: # Put coms error code here for unexpected line
-                print(line)
 
-            # # Update GUI after running full logic sequence
-            # GUI.after(1,Data_and_window_processing)  # Keep the GUI loop going
+                state = 'ERROR'
+                VFD_data_queue.put(['stop']) # Stop motor on error
+                GUI.current_state = 'Dato inesperado del arduino'
+
+                return
 
         # Stop motor if wave counter is over limit
         else:
@@ -502,7 +496,7 @@ def Data_and_window_processing():
                 VFD_data_queue.put(['stop'])
                 print('Stopping motor')
 
-                state = 'IDLE'
+                state = 'FINISHED'  # Switch to finished state
 
                 # GUI.quit()
                 return
@@ -522,8 +516,16 @@ def Wait_for_start():
     global writer
     global state
 
+    if GUI.stop_requested:
+        state = "STOP"
+        VFD_data_queue.put(['stop']) # Stop motor on error
+        return
+
     # Stay idle until the user has entered valid parameters
-    if not GUI.params_ready or not GUI.start_requested:
+    if (not GUI.experiment_params_ready 
+            or not GUI.ard_port_ready
+            or not GUI.vfd_port_ready
+            or not GUI.results_folder_ready):
         return
 
     # Stay idle until the user presses the start button
@@ -535,10 +537,11 @@ def Wait_for_start():
     motor_freq = GUI.VFD_frequency
     crank_pos = GUI.crank_length
     max_waves = GUI.experiment_wave_limit
+
     ard_COM_port = GUI.ARD_port
-    # ard_COM_port = "COM6"
     VFD_COM_port = GUI.VFD_port
-    # VFD_COM_port = "COM8"
+
+    csv_path = GUI.results_folder
 
     print("Experiment starting with:")
     print("Motor frequency:", motor_freq)
@@ -585,7 +588,7 @@ def Wait_for_start():
     threading.Thread(target=Serial_coms_thread, daemon=True).start()
 
     # Send selected frequency to VFD
-    VFD_data_queue.put(["set_freq", int(motor_freq)])
+    VFD_data_queue.put(["set_freq", motor_freq])
 
     # Now leave idle mode and enter the control/data-processing stage
     # GUI.show_status("Starting preliminary readings.")
@@ -594,6 +597,11 @@ def Wait_for_start():
 
 def preliminary_state():
     global state
+
+    if GUI.stop_requested:
+        state = "STOP"
+        VFD_data_queue.put(['stop']) # Stop motor on error
+        return
 
     if ard_data_queue.empty():
         return
@@ -614,20 +622,24 @@ def preliminary_state():
         GUI.open_crests_dialog() # Calls for GUI to display crests input
 
         state = "WAITING_FOR_CRESTS"
-
-    # elif data[0] == "Zeros ready":
-    #     GUI.show_status("Zeros ready. Starting motors.")
-    #     VFD_data_queue.put(['start'])
-    #     state = "WAITING_FOR_CRESTS"
     
     else:
         # GUI.show_alarm(f"Unexpected serial command: {line}")
         state = "ERROR"
+        VFD_data_queue.put(['stop']) # Stop motor on error
+        GUI.current_state = 'Comunicación erronea del arduino'
+
+        return
     
 
 def wait_for_crests():
 
     global state
+
+    if GUI.stop_requested:
+        state = "STOP"
+        VFD_data_queue.put(['stop']) # Stop motor on error
+        return
 
     if not GUI.crests_ready:
         return
@@ -642,29 +654,137 @@ def wait_for_crests():
     state = "READING_WAVES"
     
 
+show_save_data_screen = True
+
+def finished_state():
+
+    global state
+    global show_save_data_screen
+    global csv_file
+
+    if show_save_data_screen:
+        GUI.ask_save_data()
+        show_save_data_screen = False
+
+    if GUI.save_data:
+        save_results()
+        show_save_data_screen = True
+        GUI.save_data = False
+        
+        try:
+            csv_file.close()
+        except:
+            pass
+
+        return
+
+    if GUI.stop_requested:
+        state = "IDLE"
+        GUI.start_requested = False
+        GUI.experiment_params_ready = False
+        GUI.stop_requested = False
+        GUI.save_data = False
+        return
+
+
+def error_state():
+    global state
+
+    if GUI.stop_requested:
+        state = "IDLE"
+        GUI.start_requested = False
+        GUI.experiment_params_ready = False
+        GUI.stop_requested = False
+        GUI.save_data = False
+        return
+
+
+def save_results():
+    # Clean and normalize folder path from GUI
+    results_folder = GUI.results_folder.strip().strip("'").strip('"')
+    results_folder = os.path.normpath(results_folder)
+
+    # Create folder if it does not exist
+    os.makedirs(results_folder, exist_ok=True)
+
+    # Full results file path
+    results_path = os.path.join(results_folder, "Results.csv")
+
+    # Check if file does not exist or is empty
+    write_headers = (
+        not os.path.isfile(results_path)
+        or os.path.getsize(results_path) == 0
+    )
+
+    headers = [
+        "VFD Frequency [Hz]",
+        "Crank Length [mm]",
+        "noBond PP Avg [mm]",
+        "noBond PP Stdev [mm]",
+        "Bond PP Avg [mm]",
+        "Bond PP Stdev [mm]",
+        "noBond Frequency Avg [Hz]",
+        "noBond Frequency Stdev [Hz]",
+        "Bond Frequency Avg [Hz]",
+        "Bond Frequency Stdev [Hz]",
+        "Wavelength Avg [m]",
+        "Wavelength Stdev [m]"
+    ]
+
+    row = [
+        GUI.VFD_frequency,
+        GUI.crank_length,
+        noBond.pp_avg,
+        noBond.pp_stdev,
+        Bond.pp_avg,
+        Bond.pp_stdev,
+        noBond.freq_avg,
+        noBond.freq_stdev,
+        Bond.freq_avg,
+        Bond.freq_stdev,
+        Bond.wavelength_avg,
+        Bond.wavelength_stdev
+    ]
+
+    with open(results_path, mode="a", newline="") as results_file:
+        writer = csv.writer(results_file)
+
+        if write_headers:
+            writer.writerow(headers)
+
+        writer.writerow(row)
+
+
 def control_loop():
     global state
 
     if state == "IDLE":
+        GUI.current_state = 'Esperando parametros'
         Wait_for_start()
 
     elif state == "PRELIMINARY":
+        GUI.current_state = 'Leyendo condiciones'
         preliminary_state()
 
     elif state == "WAITING_FOR_CRESTS":
+        GUI.current_state = 'Esperando crestas'
         wait_for_crests()
 
     elif state == "READING_WAVES":
+        GUI.current_state = 'Leyendo altura olas'
         Data_and_window_processing()
 
-    # elif state == "FINISHED":
-    #     finished_state()
+    elif state == "FINISHED":
+        GUI.current_state = 'Experimento finalizado'
+        finished_state()
 
-    # elif state == "ERROR":
-    #     error_state()
+    elif state == "ERROR":
+        error_state()
 
     elif state == "STOP":
-        print('Stoppa')
+        GUI.current_state = 'STOP solicitado'
+        error_state()
+        # print('Stoppa')
 
 # Create sensor objects
 
@@ -690,22 +810,9 @@ GUI.showMaximized()
 
 timer = QTimer()
 timer.timeout.connect(control_loop)
-timer.start(200)
+timer.start(20)
 
 
 
 GUI_app.exec()
 
-
-# Save results to csv file
-if (input('\nSave data? (y/n): ') == 'y'):
-    results_file = open(csv_path + 'Results.csv', mode='a')
-    # Name of the test
-    results_file.write('\n' + GUI.VFD_frequency + ',' + GUI.crank_length + ',')
-    # Add the results
-    results_file.write(str(noBond.pp_avg) + ',' + str(noBond.pp_stdev) + ',')
-    results_file.write(str(Bond.pp_avg) + ',' + str(Bond.pp_stdev) + ',')
-    results_file.write(str(noBond.freq_avg) + ',' + str(noBond.freq_stdev) + ',')
-    results_file.write(str(Bond.freq_avg) + ',' + str(Bond.freq_stdev) + ',')
-    results_file.write(str(Bond.wavelength_avg) + ',' + str(Bond.wavelength_stdev))
-    results_file.close()
