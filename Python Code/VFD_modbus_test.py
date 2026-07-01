@@ -25,25 +25,30 @@ SLAVE = 1
 # --- Set frequency (30 Hz) ---
 freq = 1500
 time.sleep(1)
-client.write_register(0x0002, 1500, device_id=SLAVE)
+client.write_register(
+    0x0002,
+    1500,
+    device_id=SLAVE,
+    no_response_expected=True
+)
 print('Frequency set')
 
 
 time.sleep(1)
 # --- RUN forward ---
-client.write_register(0x0001, 1, device_id=SLAVE)
+client.write_register(0x0001, 1, device_id=SLAVE, no_response_expected=True)
 print('Start drive')
 
 
-time.sleep(10)
+time.sleep(2)
 
-client.write_register(0x0002, 2000, device_id=SLAVE)
-print('Frequency change')
+# client.write_register(0x0002, 2000, device_id=SLAVE)
+# print('Frequency change')
 
-time.sleep(10)
+# time.sleep(10)
 
 # --- STOP ---
-client.write_register(0x0001, 0, device_id=SLAVE)
+client.write_register(0x0001, 0, device_id=SLAVE, no_response_expected=True)
 print('Stop drive')
 time.sleep(1)
 
@@ -62,7 +67,7 @@ time.sleep(1)
 
 client.close()
 
-# --------------------------------------------------------------------------------
+# # --------------------------------------------------------------------------------
 
 # import time
 # from pymodbus.client import ModbusSerialClient
@@ -108,7 +113,7 @@ client.close()
 # # --- Client configuration (UNCHANGED) ---
 # client = ModbusSerialClient(
 #     port='COM8',  # Revisar puerto
-#     baudrate=2400,
+#     baudrate=19200,
 #     parity='N',
 #     stopbits=1,
 #     bytesize=8,
@@ -120,38 +125,41 @@ client.close()
 
 # print("Connected to VFD")
 
-# # --- Set frequency (15 Hz → 1500) ---
-# time.sleep(1)
-# client.write_register(0x0002, 1500, device_id=SLAVE)
-# print("Frequency set to 15 Hz")
+# result = client.read_holding_registers(0x0002, count=1, device_id=SLAVE)
+# print(result)
 
-# time.sleep(1)
+# # # --- Set frequency (15 Hz → 1500) ---
+# # time.sleep(1)
+# # client.write_register(0x0002, 1500, device_id=SLAVE)
+# # print("Frequency set to 15 Hz")
 
-# # --- Start drive ---
-# client.write_register(0x0001, 1, device_id=SLAVE)
-# print("Drive started")
+# # time.sleep(1)
 
-# time.sleep(1)
+# # # --- Start drive ---
+# # client.write_register(0x0001, 1, device_id=SLAVE)
+# # print("Drive started")
 
-# # --- Monitor errors while running ---
-# for _ in range(5):
-#     read_error_register(client)
-#     time.sleep(2)
+# # time.sleep(1)
 
-# # --- Change frequency ---
-# client.write_register(0x0002, 2000, device_id=SLAVE)
-# print("Frequency set to 20 Hz")
+# # # --- Monitor errors while running ---
+# # for _ in range(5):
+# #     read_error_register(client)
+# #     time.sleep(2)
 
-# time.sleep(5)
+# # # --- Change frequency ---
+# # client.write_register(0x0002, 2000, device_id=SLAVE)
+# # print("Frequency set to 20 Hz")
 
-# # --- Stop drive ---
-# client.write_register(0x0001, 0, device_id=SLAVE)
-# print("Drive stopped")
+# # time.sleep(3)
 
-# time.sleep(1)
+# # # --- Stop drive ---
+# # client.write_register(0x0001, 0, device_id=SLAVE)
+# # print("Drive stopped")
 
-# # --- Final error check ---
-# read_error_register(client)
+# # time.sleep(1)
+
+# # # --- Final error check ---
+# # read_error_register(client)
 
 # # --- Close ---
 # client.close()
