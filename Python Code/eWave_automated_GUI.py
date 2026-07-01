@@ -261,8 +261,9 @@ class MainWindow(QMainWindow):
             pen=pg.mkPen(color=white, width=4)
         )
 
-        # Extra sensor data
-
+        # ----------------------------
+        # ---- Datos experimentoS ----
+        # ----------------------------
         self.extra_data_panel = QWidget(self)
         self.extra_data_grid = QGridLayout()
         self.extra_data_panel.setLayout(self.extra_data_grid)   
@@ -1119,8 +1120,8 @@ class MainWindow(QMainWindow):
 
         self.current_state.setStyleSheet("""
             QLabel#backendStatusLabel {
-                background-color: rgba(100, 100, 100, 220);
-                color: white;
+                background-color:  rgba(255, 255, 255, 255);
+                color: black;
                 border-radius: 2.5px;
                 padding: 6px 14px;
                 margin: 2px;
@@ -1168,11 +1169,11 @@ class MainWindow(QMainWindow):
 
         return self.save_data
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     app = QApplication(sys.argv)
+    app = QApplication(sys.argv)
 
-#     window = MainWindow()
-#     window.showMaximized()
+    window = MainWindow()
+    window.showMaximized()
 
-#     app.exec()
+    app.exec()
