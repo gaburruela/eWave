@@ -24,7 +24,8 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QFormLayout,
     QDialogButtonBox,
-    QFileDialog
+    QFileDialog,
+    QMessageBox
 )
 from PySide6.QtCore import QTimer
 
@@ -39,16 +40,30 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Monitoreo de Sensores")
+        # Datos de entrada del usuario
+        self.VFD_frequency = None
+        self.crank_length = None
+        self.wave_limit = None
+        self.crests_between_sensors = None
 
-        self.ARD_port = None
-        self.VFD_port = None
-        self.results_folder = None
+        # Banderas para control de flujo en codigo de control
+        self.params_ready = False
+        self.start_requested = False
+        self.stop_requested = False
+        self.crests_ready = False
         self.stop_requested = False # Se pone en True cuando se cierra la interfaz y cuando se presiona "Detener Experimento"
+        self.save_data = False
 
+        # Configuración de sistema
+        self.ARD_port = None # Puerto del Arduino
+        self.VFD_port = None # Puerdo del variador
+        self.results_folder = None # Carpeta donde guardar los resultados del experimento
+
+        self.setWindowTitle("Monitoreo de Sensores")
 
         self.create_com_port_menu()
         self.create_storage_menu()
+        self.create_backend_status_box()
 
         self.central = QWidget()
         self.setCentralWidget(self.central)
@@ -58,7 +73,10 @@ class MainWindow(QMainWindow):
         self.main_layout.setContentsMargins(40, 10, 40, 70)
         self.main_layout.setSpacing(15)
 
-        # Fuentes
+
+        # ----------------------------
+        # ----- Importar fuentes -----
+        # ----------------------------
         font_id_poppins = QFontDatabase.addApplicationFont(
             # r"C:\eWave\eWave\Python Code\New interface\Fonts\Poppins\Poppins-Bold.ttf"
             str(BASE_DIR / "Fonts" / "Poppins" / "Poppins-Bold.ttf")
@@ -83,11 +101,12 @@ class MainWindow(QMainWindow):
         font_inter.setPointSize(12)
         font_inter.setBold(False)
 
-        # Fondo
+
+        # ----------------------------
+        # ----- Configurar fondo -----
+        # ----------------------------
         self.background = QLabel(self)
-
         self.pixmap_original = QPixmap(str(BASE_DIR / "Graphic Components" / "Background.jpg"))
-
         self.background.setPixmap(
             self.pixmap_original.scaled(
                 self.size(),
@@ -99,20 +118,24 @@ class MainWindow(QMainWindow):
         self.background.setGeometry(self.rect())
         self.background.lower()  # envía el fondo detrás de todo
 
-        # Patrón SVG inferior (logo eWave)
+        
+        # ----------------------------
+        # ---- Mostrar logo eWave ----
+        # ----------------------------
         self.svg_renderer = QSvgRenderer(str(BASE_DIR / "Graphic Components" / "Patrón 2.svg"))
 
         self.tile_w = 200
         self.tile_h = 100
-
         self.tile_image = None
         self.bottom_pattern = QLabel(self)
         self.background.lower()
         self.bottom_pattern.raise_()
         self.central.raise_()
         
-        # Título
 
+        # ----------------------------
+        # ------ Mostrar título ------
+        # ----------------------------
         self.titulo = QLabel("MONITOREO DE SENSORES", self)
         self.main_layout.addWidget(self.titulo)
 
@@ -126,54 +149,33 @@ class MainWindow(QMainWindow):
         """)
 
         
-        # Widget contenedor
+        # ----------------------------
+        # ------ Widget general- -----
+        # ----------------------------
         self.panel_graficas = QWidget()
         self.main_layout.addWidget(
             self.panel_graficas,
             stretch=3
         )
-
         # Layout dentro del widget
         layout_graficas = QHBoxLayout()
         self.panel_graficas.setLayout(layout_graficas)
 
-        # Crear gráficas de altura de ola
+
+        # ----------------------------
+        # -- Configuración gráficas --
+        # ----------------------------
         white = (252, 255, 255)
-        self.Bond_graph = pg.PlotWidget(title="Sensor Bond")
-        self.noBond_graph = pg.PlotWidget(title="Sensor noBond")
+        self.Bond_graph = pg.PlotWidget(title="Sensor playa")
+        self.noBond_graph = pg.PlotWidget(title="Sensor paleta")
 
         self.Bond_graph.setTitle(
-            "Sensor Bond",
-            color="#FFFFFF",
+            '<span style="font-family: Inter; font-size: 12pt; color: white;">Sensor playa</span>'
         )
 
         self.noBond_graph.setTitle(
-            "Sensor noBond",
-            color="#FFFFFF",
+            '<span style="font-family: Inter; font-size: 12pt; color: white;">Sensor paleta</span>'
         )
-
-
-        self.Bond_graph.setTitle(
-            '<span style="font-family: Inter; font-size: 12pt; color: white;">Sensor Bond</span>'
-        )
-
-        self.noBond_graph.setTitle(
-            '<span style="font-family: Inter; font-size: 12pt; color: white;">Sensor No Bond</span>'
-        )
-
-        axis_left_Bond = self.Bond_graph.getAxis('left')
-        axis_bottom_Bond = self.Bond_graph.getAxis('bottom')
-
-        axis_left_Bond.setStyle(tickFont=font_inter)
-        axis_bottom_Bond.setStyle(tickFont=font_inter)
-
-        axis_left_noBond = self.noBond_graph.getAxis('left')
-        axis_bottom_noBond = self.noBond_graph.getAxis('bottom')
-
-        axis_left_noBond.setStyle(tickFont=font_inter)
-        axis_bottom_noBond.setStyle(tickFont=font_inter)
-
-        
 
         self.Bond_graph.setBackground(None)
         self.noBond_graph.setBackground(None)
@@ -189,8 +191,8 @@ class MainWindow(QMainWindow):
         """)
 
         self.Bond_graph.setLabel(
-        'left',
-        'Altura Pico-Pico',
+            'left',
+            'Altura Pico-Pico',
         units='mm'
         )
 
@@ -201,14 +203,14 @@ class MainWindow(QMainWindow):
         )
 
         self.noBond_graph.setLabel(
-        'left',
-        'Altura Pico-Pico',
+            'left',
+            'Altura Pico-Pico',
         units='mm'
         )
 
         self.noBond_graph.setLabel(
-        'bottom',
-        'Tiempo',
+            'bottom',
+            'Tiempo',
         units='s'
         )
 
@@ -219,10 +221,11 @@ class MainWindow(QMainWindow):
 
         layout_graficas.setContentsMargins(
             0,    # izquierda
-            0,  # arriba
+            0,    # arriba
             0,    # derecha
             0     # abajo
         )
+
         layout_graficas.setSpacing(0)        
 
         axis_pen = pg.mkPen(color=white, width=2)
@@ -240,7 +243,7 @@ class MainWindow(QMainWindow):
         self.noBond_graph.getAxis('bottom').setTextPen(white)
 
         # Datos de visualización
-        self.n = 200
+        self.n = 100
 
         self.graph_time = np.full(self.n, np.nan)
         self.Bond_data = np.full(self.n, np.nan)
@@ -255,30 +258,10 @@ class MainWindow(QMainWindow):
             pen=pg.mkPen(color=white, width=4)
         )
 
-        # Tiempo de simulación
-        self.t = 0
 
-        # Datos de entrada del usuario
-        self.VFD_frequency = None
-        self.crank_length = None
-        self.wave_limit = None
-        self.crests_between_sensors = None
-
-        # Banderas para control de flujo en codigo de control
-        self.params_ready = False
-        self.start_requested = False
-        self.stop_requested = False
-        self.crests_ready = False
-
-
-        # # Timer
-        # self.timer = QTimer()
-        # self.timer.timeout.connect(self.update_data)
-        # self.timer.start(40)
-
-
-        # Extra sensor data
-
+        # ----------------------------
+        # --- Datos de experimento ---
+        # ----------------------------
         self.extra_data_panel = QWidget(self)
         self.extra_data_grid = QGridLayout()
         self.extra_data_panel.setLayout(self.extra_data_grid)   
@@ -320,22 +303,23 @@ class MainWindow(QMainWindow):
         
         self.extra_data_grid.setContentsMargins(0, 0, 0, 0)
         self.extra_data_grid.setHorizontalSpacing(10)
-        self.extra_data_grid.setVerticalSpacing(0)
+        self.extra_data_grid.setVerticalSpacing(6)
 
         self.extra_data_labels = []
+        self.extra_data_containers = []
 
         extra_data_titles = [
-            "Humedad [%]",
+            "Altura PP paleta [mm]",
+            "Frecuencia paleta [Hz]",
+            "Longitud de onda [m]",
+            "Altura PP playa [mm]",
+            "Frecuencia playa [Hz]",
+            "Número de olas",
             "Temperatura ambiente [°C]",
             "Temperatura del agua [°C]",
             "Temperatura del motor [°C]",
-            "Velocidad del motor [rpm]",
-            "Altura PP playa [mm]",
-            "Altura PP paleta [mm]",
-            "Frecuencia playa [Hz]",
-            "Frecuencia paleta [Hz]",
-            "Longitud de onda [m]",
-            "Número de olas"
+            "Humedad [%]",
+            "Velocidad del motor [rpm]"
         ]
 
         self.extra_data_title_labels = []
@@ -345,16 +329,38 @@ class MainWindow(QMainWindow):
             container = QWidget()
 
             layout = QVBoxLayout(container)
-            layout.setContentsMargins(0, 0, 0, 0)
-            layout.setSpacing(0)
+            if i < 6:
+                layout.setContentsMargins(12, 2, 12, 2)
+                layout.setSpacing(3)
+            else:
+                layout.setContentsMargins(0, 0, 0, 0)
+                layout.setSpacing(1)
 
             title_label = QLabel(title)
 
-            if title in [
-                "Altura PP Bond [mm]",
-                "Altura PP noBond [mm]",
-                "Frecuencia Bond [Hz]",
-                "Frecuencia noBond [Hz]",
+            if i < 6: # Para ajustar tamaño a los datos más importantes
+                container.setObjectName("mainExperimentData")
+                container.setStyleSheet("""
+                    QWidget#mainExperimentData {
+                        background-color: rgba(252, 175, 8, 45);
+                        border: 1px solid rgba(252, 175, 8, 180);
+                        border-radius: 10px;
+                    }
+                """)
+            else:
+                container.setObjectName("secondaryExperimentData")
+                container.setStyleSheet("""
+                    QWidget#secondaryExperimentData {
+                        background-color: rgba(255, 255, 255, 15);
+                        border-radius: 6px;
+                    }
+                """)
+
+            if title in [ # Para agregar la desviación estandar a los que corresponden
+                "Altura PP playa [mm]",
+                "Altura PP paleta [mm]",
+                "Frecuencia playa [Hz]",
+                "Frecuencia paleta [Hz]",
                 "Longitud de onda [m]"
             ]:
                 value_label = QLabel("0.00±0.00")
@@ -381,14 +387,15 @@ class MainWindow(QMainWindow):
             col = i % 3
 
             self.extra_data_grid.addWidget(container, row, col)
+            self.extra_data_containers.append(container)
             self.extra_data_title_labels.append(title_label)
             self.extra_data_labels.append(value_label)
 
-        # ================================ Boton de parámetros ================================
 
-        self.params_button = QPushButton(
-            "DEFINIR\nPARÁMETROS\nDEL\nEXPERIMENTO"
-        )
+        # ----------------------------
+        # - Botón de los parámetros -
+        # ----------------------------
+        self.params_button = QPushButton("DEFINIR\nPARÁMETROS\nDEL\nEXPERIMENTO")
 
         self.params_button.setMinimumSize(180, 90)
 
@@ -417,12 +424,11 @@ class MainWindow(QMainWindow):
             self.open_parameters_dialog
         )
 
-        # ================================ Boton de inicio ================================
 
-
-        self.start_button = QPushButton(
-        "INICIAR\nEXPERIMENTO"
-        )
+        # ----------------------------
+        # ------- Botón inicio -------
+        # ----------------------------
+        self.start_button = QPushButton("INICIAR\nEXPERIMENTO")
 
         self.start_button.setEnabled(False) # Start disabled until params are ready
 
@@ -453,11 +459,11 @@ class MainWindow(QMainWindow):
             self.start_clicked
         )
 
-        # ================================ Boton de paro ================================
 
-        self.stop_button = QPushButton(
-            "DETENER\nEXPERIMENTO"
-        )
+        # ----------------------------
+        # -------- Botón paro --------
+        # ----------------------------
+        self.stop_button = QPushButton("DETENER\nEXPERIMENTO")
 
         self.stop_button.setMinimumSize(180, 90)
 
@@ -465,7 +471,6 @@ class MainWindow(QMainWindow):
             QSizePolicy.Expanding,
             QSizePolicy.Expanding
         )
-
 
         self.stop_button.setStyleSheet("""
             QPushButton{
@@ -524,7 +529,7 @@ class MainWindow(QMainWindow):
 
         self.update_fonts()
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event): # Reescala interfaz dependiendo de tamaño de ventana
 
         self.update_pattern_size()
         self.main_layout.setContentsMargins(
@@ -548,8 +553,6 @@ class MainWindow(QMainWindow):
             int(self.width() * 0.7)
         )
 
-        #self.data_container.setMinimumWidth(825)
-
         self.bottom_pattern.setGeometry(
             0,
             self.height() - self.tile_h - 3,
@@ -557,10 +560,8 @@ class MainWindow(QMainWindow):
             self.tile_h
         )
 
-
         self.draw_bottom_pattern()                          
         self.update_fonts()
-
 
         super().resizeEvent(event)
 
@@ -575,9 +576,11 @@ class MainWindow(QMainWindow):
 
         data_title_size = max(16, int(25 * scale))
 
-        data_label_size = max(9, int(14 * scale))
+        main_data_label_size = max(15, int(15 * scale))
+        main_data_value_size = max(14, int(14 * scale))
 
-        data_value_size = max(8, int(12 * scale))
+        secondary_data_label_size = max(8, int(12 * scale))
+        secondary_data_value_size = max(8, int(11 * scale))
 
         graph_size = max(8, int(12 * scale))
 
@@ -595,20 +598,30 @@ class MainWindow(QMainWindow):
 
         self.data_title.setFont(font)
 
-        # Etiquetas de datos
-        for lbl in self.extra_data_title_labels:
+        # Etiquetas y valores de datos
+        for i, lbl in enumerate(self.extra_data_title_labels):
 
             f = QFont(self.family_inter)
-            f.setBold(False)
-            f.setPointSize(data_label_size)
+
+            if i < 6:
+                f.setBold(False)
+                f.setPointSize(main_data_label_size)
+            else:
+                f.setBold(False)
+                f.setPointSize(secondary_data_label_size)
 
             lbl.setFont(f)
 
-        # Valores
-        for lbl in self.extra_data_labels:
+        for i, lbl in enumerate(self.extra_data_labels):
 
             f = QFont(self.family_inter)
-            f.setPointSize(data_value_size)
+
+            if i < 6:
+                f.setBold(False)
+                f.setPointSize(main_data_value_size)
+            else:
+                f.setBold(False)
+                f.setPointSize(secondary_data_value_size)
 
             lbl.setFont(f)
 
@@ -820,39 +833,6 @@ class MainWindow(QMainWindow):
                 self.crests_ready = False
                 return
 
-    def update_data(self):
-
-        # Simulación de temperatura
-        temperatura = (
-            25
-            + 2*np.sin(self.t/50)
-            + np.random.normal(0, 0.1)
-        )
-
-        # Simulación de presión
-        presion = (
-            25
-            + 2*np.sin(3.14-self.t/50)
-            + np.random.normal(0, 0.1)
-        )
-
-        # Desplazar datos a la izquierda
-        self.Bond_data[:-1] = self.Bond_data[1:]
-        self.noBond_data[:-1] = self.noBond_data[1:]
-
-        # Agregar nueva muestra
-        self.Bond_data[-1] = temperatura
-        self.noBond_data[-1] = presion
-
-        # Actualizar gráficas
-        self.Bond_curve.setData(self.x, self.Bond_data)
-        self.noBond_curve.setData(self.x, self.noBond_data)
-
-
-        
-
-        self.t += 1
-
     def update_wave_graphs(self, t, bond_height, nobond_height):
         """
         Updates both live wave-height graphs with one new processed sample.
@@ -924,17 +904,17 @@ class MainWindow(QMainWindow):
             return f"{avg:.{decimals}f}±{stdev:.{decimals}f}"
 
         values = [
-            fmt(humidity),
+            fmt_pm(nobond_freq_avg, nobond_freq_stdev),
+            fmt_pm(nobond_pp_avg, nobond_pp_stdev),
+            fmt_pm(wavelength_avg, wavelength_stdev),
+            fmt_pm(bond_pp_avg, bond_pp_stdev),
+            fmt_pm(bond_freq_avg, bond_freq_stdev),
+            fmt(wave_count, decimals=1),
             fmt(ambient_temp),
             fmt(water_temp),
             fmt(motor_temp),
-            fmt(rpm),
-            fmt_pm(bond_pp_avg, bond_pp_stdev),
-            fmt_pm(nobond_pp_avg, nobond_pp_stdev),
-            fmt_pm(bond_freq_avg, bond_freq_stdev),
-            fmt_pm(nobond_freq_avg, nobond_freq_stdev),
-            fmt_pm(wavelength_avg, wavelength_stdev),
-            fmt(wave_count, decimals=1)
+            fmt(humidity),
+            fmt(rpm)
         ]
 
         for label, value in zip(self.extra_data_labels, values):
@@ -1083,7 +1063,7 @@ class MainWindow(QMainWindow):
 
     def create_storage_menu(self):
         self.menu_storage = self.menuBar().addMenu(
-            "Almacenamiento | --"
+            "Carpeta para resultados | --"
         )
 
         self.action_select_data_folder = QAction(
@@ -1121,6 +1101,66 @@ class MainWindow(QMainWindow):
         self.stop_requested = True
         event.accept()
 
+    def create_backend_status_box(self):
+        self.current_state = QLabel("--")
+        self.current_state.setObjectName("backendStatusLabel")
+
+        self.current_state.setAlignment(Qt.AlignCenter)
+        self.current_state.setMinimumWidth(260)
+
+        self.current_state.setStyleSheet("""
+            QLabel#backendStatusLabel {
+                background-color: rgba(100, 100, 100, 220);
+                color: white;
+                border-radius: 2.5px;
+                padding: 6px 14px;
+                margin: 2px;
+                font-weight: bold;
+            }
+        """)
+
+        self.menuBar().setCornerWidget(
+            self.current_state,
+            Qt.TopRightCorner
+        )
+
+    def set_backend_status(self, message):
+        self.current_state.setText(str(message))
+
+    def ask_save_data(self):
+        message_box = QMessageBox(self)
+        message_box.setWindowTitle("Guardar datos")
+        message_box.setText("¿Desea guardar los datos del experimento?")
+
+        yes_button = message_box.addButton(
+            "Guardar",
+            QMessageBox.ButtonRole.YesRole
+        )
+
+        no_button = message_box.addButton(
+            "No guardar",
+            QMessageBox.ButtonRole.NoRole
+        )
+
+        message_box.setDefaultButton(yes_button)
+
+        message_box.exec()
+
+        clicked_button = message_box.clickedButton()
+
+        if clicked_button == yes_button:
+            self.save_data = True
+
+        elif clicked_button == no_button:
+            self.save_data = False
+
+        else:
+            self.save_data = False
+
+        return self.save_data
+
+        
+    
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)
