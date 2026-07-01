@@ -47,12 +47,15 @@ class MainWindow(QMainWindow):
         self.crests_between_sensors = None
 
         # Banderas para control de flujo en codigo de control
-        self.params_ready = False
+        self.experiment_params_ready = False
+        self.ard_port_ready = False
+        self.vfd_port_ready = False
+        self.coms_params_ready = False
+        self.results_folder_ready = False
         self.start_requested = False
-        self.stop_requested = False
         self.crests_ready = False
-        self.stop_requested = False # Se pone en True cuando se cierra la interfaz y cuando se presiona "Detener Experimento"
         self.save_data = False
+        self.stop_requested = False # Se pone en True cuando se cierra la interfaz y cuando se presiona "Detener Experimento"
 
         # Configuración de sistema
         self.ARD_port = None # Puerto del Arduino
@@ -258,10 +261,8 @@ class MainWindow(QMainWindow):
             pen=pg.mkPen(color=white, width=4)
         )
 
+        # Extra sensor data
 
-        # ----------------------------
-        # --- Datos de experimento ---
-        # ----------------------------
         self.extra_data_panel = QWidget(self)
         self.extra_data_grid = QGridLayout()
         self.extra_data_panel.setLayout(self.extra_data_grid)   
@@ -764,11 +765,11 @@ class MainWindow(QMainWindow):
                 if self.experiment_wave_limit <= 0:
                     raise ValueError("Wave limit must be positive.")
                 
-                self.params_ready = True
+                self.experiment_params_ready = True
 
             except ValueError as error:
                 print("Invalid experiment parameters:", error)
-                self.params_ready = False
+                self.experiment_params_ready = False
                 self.start_button.setEnabled(False)
                 return
 
@@ -777,7 +778,11 @@ class MainWindow(QMainWindow):
             self.start_button.setEnabled(True)
 
     def start_clicked(self):
-        if not self.params_ready:
+        if (not self.experiment_params_ready 
+            or not self.ard_port_ready
+            or not self.vfd_port_ready
+            or not self.results_folder_ready):
+
             print("Cannot start: experiment parameters are missing.")
             return
 
@@ -1042,11 +1047,15 @@ class MainWindow(QMainWindow):
     def set_arduino_port(self, port_name):
         self.ARD_port = port_name
 
+        self.ard_port_ready = True
+
         self.update_com_menu_title()
         self.arduino_port_selected.emit(self.ARD_port)
 
     def set_vfd_port(self, port_name):
         self.VFD_port = port_name
+
+        self.vfd_port_ready = True
 
         self.update_com_menu_title()
         self.vfd_port_selected.emit(self.VFD_port)
@@ -1088,6 +1097,8 @@ class MainWindow(QMainWindow):
             return
 
         self.results_folder = selected_folder
+
+        self.results_folder_ready = True
 
         self.menu_storage.setTitle(
             f"Almacenamiento | {self.results_folder}"
