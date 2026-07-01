@@ -485,7 +485,7 @@ def Data_and_window_processing():
 
                 state = 'ERROR'
                 VFD_data_queue.put(['stop']) # Stop motor on error
-                GUI.current_state = 'Dato inesperado del arduino'
+                GUI.set_backend_status('Dato inesperado del arduino')
 
                 return
 
@@ -612,24 +612,25 @@ def preliminary_state():
     if data[0] == "Zero levels":
         # Do nothing because we dont have anything used for zero levels
         print(line)
-        # GUI.show_status("Zero levels received.")
 
     elif data[0] == "Zeros ready":
-        # GUI.show_status("Zeros ready. Starting motors.")
         VFD_data_queue.put(['start'])
 
-        time.sleep(3)
+
+    elif data[0] == "Ambient temperature: ":
+
         GUI.open_crests_dialog() # Calls for GUI to display crests input
 
         state = "WAITING_FOR_CRESTS"
+        
     
-    else:
-        # GUI.show_alarm(f"Unexpected serial command: {line}")
-        state = "ERROR"
-        VFD_data_queue.put(['stop']) # Stop motor on error
-        GUI.current_state = 'Comunicación erronea del arduino'
+    # else:
+    #     # GUI.show_alarm(f"Unexpected serial command: {line}")
+    #     state = "ERROR"
+    #     VFD_data_queue.put(['stop']) # Stop motor on error
+    #     GUI.current_state = 'Comunicación erronea del arduino'
 
-        return
+    #     return
     
 
 def wait_for_crests():
@@ -759,30 +760,30 @@ def control_loop():
     global state
 
     if state == "IDLE":
-        GUI.current_state = 'Esperando parametros'
+        GUI.set_backend_status('Esperando parametros')
         Wait_for_start()
 
     elif state == "PRELIMINARY":
-        GUI.current_state = 'Leyendo condiciones'
+        GUI.set_backend_status('Leyendo condiciones')
         preliminary_state()
 
     elif state == "WAITING_FOR_CRESTS":
-        GUI.current_state = 'Esperando crestas'
+        GUI.set_backend_status('Esperando crestas')
         wait_for_crests()
 
     elif state == "READING_WAVES":
-        GUI.current_state = 'Leyendo altura olas'
+        GUI.set_backend_status('Leyendo altura olas')
         Data_and_window_processing()
 
     elif state == "FINISHED":
-        GUI.current_state = 'Experimento finalizado'
+        GUI.set_backend_status('Experimento finalizado')
         finished_state()
 
     elif state == "ERROR":
         error_state()
 
     elif state == "STOP":
-        GUI.current_state = 'STOP solicitado'
+        GUI.set_backend_status('STOP solicitado')
         error_state()
         # print('Stoppa')
 

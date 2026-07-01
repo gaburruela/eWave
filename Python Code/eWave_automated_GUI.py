@@ -1168,11 +1168,11 @@ class MainWindow(QMainWindow):
 
         return self.save_data
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    app = QApplication(sys.argv)
+#     app = QApplication(sys.argv)
 
-    window = MainWindow()
-    window.showMaximized()
+#     window = MainWindow()
+#     window.showMaximized()
 
-    app.exec()
+#     app.exec()

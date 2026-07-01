@@ -1,0 +1,2 @@
+VFD Frequency [Hz],Crank Length [mm],noBond PP Avg [mm],noBond PP Stdev [mm],Bond PP Avg [mm],Bond PP Stdev [mm],noBond Frequency Avg [Hz],noBond Frequency Stdev [Hz],Bond Frequency Avg [Hz],Bond Frequency Stdev [Hz],Wavelength Avg [m],Wavelength Stdev [m]
+20.0,30.0,121.0524,1.8716014645498815,116.58694736842105,2.4695827239453494,0.4921945701357464,0.006121695483116996,0.4911764705882353,0.0031002722158513492,5.613438488340935,0.13399531830123368
