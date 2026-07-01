@@ -23,7 +23,8 @@ from PySide6.QtWidgets import (
     QDialog,
     QLineEdit,
     QFormLayout,
-    QDialogButtonBox
+    QDialogButtonBox,
+    QFileDialog
 )
 from PySide6.QtCore import QTimer
 
@@ -34,16 +35,20 @@ BASE_DIR = Path(__file__).resolve().parent
 class MainWindow(QMainWindow):
     arduino_port_selected = Signal(str)
     vfd_port_selected = Signal(str)
+    data_folder_selected = Signal(str)
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("Monitoreo de Sensores")
 
-        self.com_port = None
         self.ARD_port = None
         self.VFD_port = None
+        self.results_folder = None
+        self.stop_requested = False # Se pone en True cuando se cierra la interfaz y cuando se presiona "Detener Experimento"
+
 
         self.create_com_port_menu()
+        self.create_storage_menu()
 
         self.central = QWidget()
         self.setCentralWidget(self.central)
@@ -330,10 +335,10 @@ class MainWindow(QMainWindow):
             "Temperatura del agua [°C]",
             "Temperatura del motor [°C]",
             "Velocidad del motor [rpm]",
-            "Altura PP Bond [mm]",
-            "Altura PP noBond [mm]",
-            "Frecuencia Bond [Hz]",
-            "Frecuencia noBond [Hz]",
+            "Altura PP playa [mm]",
+            "Altura PP paleta [mm]",
+            "Frecuencia playa [Hz]",
+            "Frecuencia paleta [Hz]",
             "Longitud de onda [m]",
             "Número de olas"
         ]
@@ -498,8 +503,6 @@ class MainWindow(QMainWindow):
         bottom_layout.addWidget(self.data_container)
 
         QTimer.singleShot(0, self.initialize_ui)
-
-        
 
     def initialize_ui(self):
         self.update_pattern_size()
@@ -703,7 +706,6 @@ class MainWindow(QMainWindow):
 
         painter.end()
 
-
     # =============================== Button click functions ===============================    
 
     def open_parameters_dialog(self):
@@ -784,6 +786,8 @@ class MainWindow(QMainWindow):
 
     def stop_clicked(self):
         self.stop_requested = True
+        # print("Detención de experimento detectado.")
+        # print("stop_requested =", self.stop_requested)
 
     def open_crests_dialog(self):
         # user enters crests between sensors
@@ -1069,32 +1073,18 @@ class MainWindow(QMainWindow):
     def set_arduino_port(self, port_name):
         self.ARD_port = port_name
 
-        self.statusBar().showMessage(
-            f"Puerto Arduino seleccionado: {self.ARD_port}"
-        )
-
-        print(f"Puerto Arduino seleccionado: {self.ARD_port}")
-
         self.ard_port_ready = True
 
         self.update_com_menu_title()
         self.arduino_port_selected.emit(self.ARD_port)
 
-
     def set_vfd_port(self, port_name):
         self.VFD_port = port_name
-
-        self.statusBar().showMessage(
-            f"Puerto variador seleccionado: {self.VFD_port}"
-        )
-
-        print(f"Puerto variador seleccionado: {self.VFD_port}")
 
         self.vfd_port_ready = True
 
         self.update_com_menu_title()
         self.vfd_port_selected.emit(self.VFD_port)
-
 
     def update_com_menu_title(self):
         arduino_text = self.ARD_port if self.ARD_port is not None else "--"
@@ -1103,6 +1093,47 @@ class MainWindow(QMainWindow):
         self.menu_comunicacion.setTitle(
             f"Puertos | Arduino: {arduino_text} | Variador: {vfd_text}"
         )
+
+    def create_storage_menu(self):
+        self.menu_storage = self.menuBar().addMenu(
+            "Almacenamiento | --"
+        )
+
+        self.action_select_data_folder = QAction(
+            "Seleccionar carpeta de datos",
+            self
+        )
+
+        self.action_select_data_folder.triggered.connect(
+            self.select_data_folder
+        )
+
+        self.menu_storage.addAction(
+            self.action_select_data_folder
+        )
+
+    def select_data_folder(self):
+        selected_folder = QFileDialog.getExistingDirectory(
+            self,
+            "Seleccionar carpeta para almacenar datos",
+            str(BASE_DIR)
+        )
+
+        if selected_folder == "":
+            return
+
+        self.results_folder = selected_folder
+
+        self.menu_storage.setTitle(
+            f"Almacenamiento | {self.results_folder}"
+        )
+
+        self.data_folder_selected.emit(self.results_folder)
+
+    def closeEvent(self, event):
+        self.stop_requested = True
+        event.accept()
+
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)
