@@ -139,6 +139,7 @@ float s2_zero_measurements_avg = 0;
 float s2_stdv = 4;
 bool zero_leveled = false;
 bool water_moving = false;
+float water_lvl_allowed_std = 0.1;
 
 // Timeouts
 const int timeout_lim = 15000; // Timeout for Inductive and zero leveling
@@ -204,7 +205,7 @@ void Zero_Leveling() {
       s2_stdv = 0;
       zero_checks = 0;
 
-      Serial.println("ERROR, Water level unstable");
+      Serial.println("ERROR, Nivel del agua inestable");
 
       break;
     }
@@ -261,7 +262,7 @@ void Zero_Leveling() {
     s2_stdv = sqrt(sum2/zero_sample); 
     
     // Zero level stabilized 
-    if (s1_stdv <= 0.6 && s2_stdv <= 0.6){
+    if (s1_stdv <= water_lvl_allowed_std && s2_stdv <= water_lvl_allowed_std){
       memset(s1_zero_measurements, 0, sizeof(s1_zero_measurements)); // Llena el array con 0
       memset(s2_zero_measurements, 0, sizeof(s2_zero_measurements)); // Llena el array con 0
       s1_stdv = 0;
@@ -306,7 +307,7 @@ void Inductive() {
   while (true){
     // Check for timeout
     if (millis() - startTime > timeout_lim) {
-      Serial.println("ERROR,Inductive timeout");
+      Serial.println("ERROR,Timeout del inductivo");
       rpm_measured = false;
       break;
     }

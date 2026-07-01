@@ -669,6 +669,39 @@ def Wait_for_start():
 
         GUI.crests_ready = False
 
+        # Reset graficas de la pantalla
+
+        GUI.update_wave_graphs(
+            t=0,
+            bond_height=0,
+            nobond_height=0
+        )
+
+        GUI.update_experiment_values(
+            humidity=0,
+            ambient_temp=0,
+            water_temp=0,
+            motor_temp=0,
+            rpm=0,
+
+            bond_pp_avg=Bond.pp_avg,
+            bond_pp_stdev=Bond.pp_stdev,
+
+            nobond_pp_avg=noBond.pp_avg,
+            nobond_pp_stdev=noBond.pp_stdev,
+
+            bond_freq_avg=Bond.freq_avg,
+            bond_freq_stdev=Bond.freq_stdev,
+
+            nobond_freq_avg=noBond.freq_avg,
+            nobond_freq_stdev=noBond.freq_stdev,
+
+            wavelength_avg=Bond.wavelength_avg,
+            wavelength_stdev=Bond.wavelength_stdev,
+
+            wave_count=Bond.wave_counter
+        )
+
 
     # Transfer GUI values into control-side variables
     motor_freq = GUI.VFD_frequency
@@ -979,7 +1012,6 @@ def control_loop():
         Wait_for_start()
 
     elif state == "PRELIMINARY":
-        GUI.set_backend_status('Leyendo condiciones')
         preliminary_state()
 
     elif state == "WAITING_FOR_CRESTS":
