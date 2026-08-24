@@ -9,8 +9,8 @@ import time
 # o1-03 gives units, set at 0 for 0.01 Hz
 
 client = ModbusSerialClient( 
-    port='COM4',  # Revisar puerto
-    baudrate=2400,
+    port='COM8',  # Revisar puerto
+    baudrate=19200,
     parity='N',
     stopbits=1,
     bytesize=8,

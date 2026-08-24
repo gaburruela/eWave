@@ -355,6 +355,7 @@ def Data_and_window_processing():
 
     if GUI.stop_requested:
         state = "STOP"
+        VFD_data_queue.put(['stop']) # Stop motor on error
         return
 
     try:
