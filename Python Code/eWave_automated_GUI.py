@@ -32,7 +32,10 @@ from PySide6.QtCore import QTimer
 
 # Font folder must be in the same folder as the GUI python code
 
-BASE_DIR = Path(__file__).resolve().parent
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    BASE_DIR = Path(sys._MEIPASS)
+else:
+    BASE_DIR = Path(__file__).resolve().parent
 
 class MainWindow(QMainWindow):
     arduino_port_selected = Signal(str)
