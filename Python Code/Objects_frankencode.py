@@ -8,7 +8,7 @@ import winsound
 import threading
 import queue
 from pymodbus.client import ModbusSerialClient
-
+from serial_log import LoggedSerial, vfd_trace
 import sys
 from eWave_automated_GUI import MainWindow
 from PySide6.QtCore import QTimer
@@ -155,17 +155,19 @@ class Comms:
             parity="N",
             stopbits=1,
             bytesize=8,
-            timeout=1
+            timeout=1,
+            trace_packet=vfd_trace
         )
 
         if not self.client.connect():
             raise RuntimeError(f"Failed to connect VFD on {self.VFD_port}")
 
         # Connect Arduino
-        self.ser = serial.Serial(
+        self.ser = LoggedSerial(      # antes: serial.Serial(
             self.ard_port,
             self.ard_baudrate,
-            timeout=0.02
+            timeout=0.02,             # agrega la coma
+            name="ARDUINO"
         )
 
         if not self.ser.is_open:

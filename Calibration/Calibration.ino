@@ -1,8 +1,8 @@
 // Se toman n mediciones y se saca el promedio de todas esas, dura como 3 segundos cada promedio
 
-const int sensor1 = A3; // No Bond
-const int sensor2 = A2; // Bond
-const int num_med = 69; //nice
+const int sensor1 = A5; // No Bond
+const int sensor2 = A6; // Bond
+const int num_med = 5; //nice
 
 float s1_voltage;
 float s2_voltage;
@@ -55,10 +55,11 @@ void loop() {
   // Calibración hecha en el excel: NotBond
   s1_distance_calibrated = (s1_distance_avg + 0.09645) / 0.994539706;
   s1_distance_int = round(s1_distance_calibrated); // Redondea a int
-  //Serial.println(s1_distance_int);
+  Serial.print("s1_distance_int");  Serial.println(s1_distance_int);
+
 
   // Calibración hecha en el excel: Bond
   s2_distance_calibrated = (s2_distance_avg + 6.587792647) / 1.016928676;
   s2_distance_int = round(s2_distance_calibrated); // Redondea a int
-  Serial.println(s2_distance_int);
+  Serial.print("s2_distance_int");  Serial.println(s2_distance_int);
 }
