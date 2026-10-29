@@ -984,8 +984,8 @@ class MainWindow(QMainWindow):
             return f"{avg:.{decimals}f}±{stdev:.{decimals}f}"
 
         values = [
-            fmt_pm(nobond_freq_avg, nobond_freq_stdev),
-            fmt_pm(nobond_pp_avg, nobond_pp_stdev),
+            fmt_pm(nobond_pp_avg, nobond_pp_stdev),     # Altura PP paleta
+            fmt_pm(nobond_freq_avg, nobond_freq_stdev), # Frecuencia paleta
             fmt_pm(wavelength_avg, wavelength_stdev),
             fmt_pm(bond_pp_avg, bond_pp_stdev),
             fmt_pm(bond_freq_avg, bond_freq_stdev),
