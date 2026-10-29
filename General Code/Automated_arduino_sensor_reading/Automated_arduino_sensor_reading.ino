@@ -102,25 +102,24 @@ float s2_distance_calibrated = 0;
 float s2_zero_lvl = 0;
 float s2_zero_lvl_check = 0;
 
-// Manual mapping
-// Not Bond
-const float s1_min_Volt = 175; // [bits]
-const float s1_max_Volt = 883; // [bits]
-const float s1_min_Dist = 88; // [mm]
-const float s1_max_Dist = 973; // [mm]
-// Bond
-const float s2_min_Volt = 176;
-const float s2_max_Volt = 882;
-const float s2_min_Dist = 87;
-const float s2_max_Dist = 967;
+// Nuevas ecuaciones de ajuste lineal
+// Voltaje = intercepto + pendiente * Altura
+//
+// Sensor 1:
+// V_s1 = 2.44912 - 0.004194 * Altura
+//
+// Sensor 2:
+// V_s2 = 2.43324 - 0.004161 * Altura
+//
+// Despejando Altura:
+// Altura_s1 = (V_s1 - 2.44912) / (-0.004194)
+// Altura_s2 = (V_s2 - 2.43324) / (-0.004161)
 
-// Parámetros de calibración - Revisar Excel
-// Not Bond
-const float s1_slope = 1.022794118;
-const float s1_intercept = -2.210294118;
-// Bond
-const float s2_slope = 1.031985294;
-const float s2_intercept = -1.66541176;
+const float s1_voltage_intercept = 2.44912;
+const float s1_voltage_slope = -0.004194;
+
+const float s2_voltage_intercept = 2.43324;
+const float s2_voltage_slope = -0.004161;
 
 
 // Automating code
@@ -161,14 +160,21 @@ bool bandera_inicio = false;
 bool bandera_crestas = false;
 
 // EXTERNAL FUNCTIONS
-// Manual mapping - get decimals - sensor is just which of the 2 sensors we're mapping
-float mapping(float signal, int sensor) {
+// Convertir la lectura ADC a voltaje
+float sensor_voltage(int signal) {
+  return signal * V_ref / 1023.0;
+}
+
+// Convertir voltaje a distancia/altura usando las nuevas ecuaciones
+float sensor_height(float voltage, int sensor) {
   if (sensor == 1) {
-    return (signal - s1_min_Volt) / (s1_max_Volt - s1_min_Volt) * (s1_max_Dist - s1_min_Dist) + s1_min_Dist; // regla de 3
+    return (voltage - s1_voltage_intercept) / s1_voltage_slope;
   }
+
   if (sensor == 2) {
-    return (signal - s2_min_Volt) / (s2_max_Volt - s2_min_Volt) * (s2_max_Dist - s2_min_Dist) + s2_min_Dist;
+    return (voltage - s2_voltage_intercept) / s2_voltage_slope;
   }
+
   return 0.0;
 }
 
@@ -214,11 +220,14 @@ void Zero_Leveling() {
     s2_zero_lvl = 0; 
 
     for (int i = 0; i < med_zero; i++) {
-      s1_voltage = analogRead(s1);
-      s2_voltage = analogRead(s2);
-      //Serial.println(s2_voltage);
-      s1_zero_lvl += mapping(s1_voltage, 1);
-      s2_zero_lvl += mapping(s2_voltage, 2);
+      // Leer ADC y convertir a voltaje
+      s1_voltage = sensor_voltage(analogRead(s1));
+      s2_voltage = sensor_voltage(analogRead(s2));
+
+      // Obtener la distancia/altura con las nuevas ecuaciones
+      s1_zero_lvl += sensor_height(s1_voltage, 1);
+      s2_zero_lvl += sensor_height(s2_voltage, 2);
+
       delay(50);
     }
     
@@ -226,9 +235,6 @@ void Zero_Leveling() {
     // Zero level setting - Averages
     s1_zero_lvl /= med_zero;
     s2_zero_lvl /= med_zero;
-    // Calibrate sensors
-    s1_zero_lvl = (s1_zero_lvl - s1_intercept) / s1_slope;
-    s2_zero_lvl = (s2_zero_lvl - s2_intercept) / s2_slope;
 
     s1_zero_measurements[zero_measurements_index] = s1_zero_lvl;
     s2_zero_measurements[zero_measurements_index] = s2_zero_lvl;
@@ -463,16 +469,17 @@ void All_Measurements() {
   digitalWrite(sync, LOW);
   delay(2);
 
-  s1_voltage = analogRead(s1);
-  s2_voltage = analogRead(s2);
-  s1_distance = mapping(s1_voltage, 1);
-  s2_distance = mapping(s2_voltage, 2);
+  // Leer ADC y convertir a voltaje
+  s1_voltage = sensor_voltage(analogRead(s1));
+  s2_voltage = sensor_voltage(analogRead(s2));
 
-  // Calibration
-  s1_distance_calibrated = (s1_distance - s1_intercept) / s1_slope;
-  s2_distance_calibrated = (s2_distance - s2_intercept) / s2_slope;
-  //s1_distance_calibrated = s1_distance;
-  //s2_distance_calibrated = s2_distance;
+  // Obtener distancia/altura con las nuevas ecuaciones
+  s1_distance = sensor_height(s1_voltage, 1);
+  s2_distance = sensor_height(s2_voltage, 2);
+
+  // Ya no se requiere una segunda calibración
+  s1_distance_calibrated = s1_distance;
+  s2_distance_calibrated = s2_distance;
 }
 
 // Print results
